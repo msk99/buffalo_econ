@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buffalo Bioeconomic Model</title>
+<style>
+
+  /* ============================================================
+     Tokens -- light is the base; both dark states redefine tokens only.
+     ============================================================ */
+  :root {
+    --paper:        #F5F7F5;
+    --surface:      #FFFFFF;
+    --sunk:         #EBEFEC;
+    --ink:          #16211E;
+    --ink-2:        #47544F;
+    --ink-3:        #74827C;
+    --rule:         #D6DCD8;
+    --rule-strong:  #B8C2BC;
+    --accent:       #14655A;
+    --accent-ink:   #0E4A42;
+    --accent-soft:  #DDEAE6;
+    --flag:         #8A6A1F;
+    --flag-soft:    #F3EBD6;
+    --defect:       #9E4034;
+    --defect-soft:  #F6E4E0;
+    --verify:       #2E6B3F;
+    --shadow:       0 1px 2px rgba(22,33,30,.06), 0 8px 24px -16px rgba(22,33,30,.28);
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:       #101614;
+      --surface:     #171F1C;
+      --sunk:        #1C2522;
+      --ink:         #E5EAE7;
+      --ink-2:       #A8B5AF;
+      --ink-3:       #7B8983;
+      --rule:        #2B3833;
+      --rule-strong: #3C4B45;
+      --accent:      #5CBFA8;
+      --accent-ink:  #8AD6C3;
+      --accent-soft: #16322C;
+      --flag:        #C9A44F;
+      --flag-soft:   #2C2616;
+      --defect:      #D9796A;
+      --defect-soft: #32201C;
+      --verify:      #6FB585;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:       #101614;
+    --surface:     #171F1C;
+    --sunk:        #1C2522;
+    --ink:         #E5EAE7;
+    --ink-2:       #A8B5AF;
+    --ink-3:       #7B8983;
+    --rule:        #2B3833;
+    --rule-strong: #3C4B45;
+    --accent:      #5CBFA8;
+    --accent-ink:  #8AD6C3;
+    --accent-soft: #16322C;
+    --flag:        #C9A44F;
+    --flag-soft:   #2C2616;
+    --defect:      #D9796A;
+    --defect-soft: #32201C;
+    --verify:      #6FB585;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  /* ============================================================
+     Base
+     ============================================================ */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  code, kbd, samp, .mono { font-family: var(--mono); font-size: .86em; }
+
+  code {
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  /* ============================================================
+     Masthead
+     ============================================================ */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .masthead-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(2.4rem, 5vw, 4rem) clamp(1.15rem, 4vw, 2.5rem) clamp(1.9rem, 3.5vw, 2.6rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: .705rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2rem, 5.2vw, 3.15rem);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0;
+    max-width: 60ch;
+    font-size: clamp(1.02rem, 2.1vw, 1.18rem);
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .masthead-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 2.1rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: .78rem;
+    color: var(--ink-3);
+  }
+  .masthead-meta b {
+    display: block;
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    opacity: .8;
+    margin-bottom: .1rem;
+  }
+  .masthead-meta span { color: var(--ink-2); }
+
+  /* ============================================================
+     Shell -- sticky rail + column
+     ============================================================ */
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.8rem, 4vw, 3.2rem) clamp(1.15rem, 4vw, 2.5rem) 5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.6rem;
+    align-items: start;
+  }
+  @media (min-width: 1000px) {
+    .shell { grid-template-columns: 216px minmax(0, 1fr); gap: 3.4rem; }
+    .rail { position: sticky; top: 1.6rem; max-height: calc(100vh - 3.2rem); overflow-y: auto; }
+  }
+
+  .rail nav { display: flex; flex-direction: column; gap: .1rem; }
+  .rail .rail-title {
+    font-family: var(--sans);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: .6rem;
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .rail a {
+    font-family: var(--sans);
+    font-size: .8rem;
+    line-height: 1.35;
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: .32rem 0 .32rem .1rem;
+    display: flex;
+    gap: .55rem;
+    border-left: 2px solid transparent;
+    padding-left: .55rem;
+  }
+  .rail a:hover { color: var(--accent); border-left-color: var(--accent); }
+  .rail a .n {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    min-width: 1.05em;
+  }
+  .rail a:hover .n { color: var(--accent); }
+
+  /* ============================================================
+     Sections & headings
+     ============================================================ */
+  .col { min-width: 0; display: flex; flex-direction: column; gap: 3.2rem; }
+
+  section { scroll-margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.05rem; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.42rem, 3vw, 1.78rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    margin: 0;
+    padding-bottom: .7rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    text-wrap: balance;
+  }
+  h2 .num {
+    font-family: var(--sans);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    flex: none;
+    transform: translateY(-.15em);
+  }
+  h3 {
+    font-family: var(--serif);
+    font-size: 1.11rem;
+    font-weight: 600;
+    margin: .7rem 0 -.35rem;
+    letter-spacing: -.005em;
+    color: var(--ink);
+  }
+  h4 {
+    font-family: var(--sans);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: .5rem 0 -.5rem;
+  }
+
+  p { margin: 0; max-width: 68ch; }
+  section > ul, section > ol { margin: 0; padding-left: 1.25rem; max-width: 68ch; display: flex; flex-direction: column; gap: .45rem; }
+  li { padding-left: .15rem; }
+  li::marker { color: var(--ink-3); }
+
+  strong { font-weight: 600; }
+
+  /* ============================================================
+     Formula block
+     ============================================================ */
+  .formula {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: .95rem 1.15rem;
+    font-family: var(--mono);
+    font-size: .82rem;
+    line-height: 1.75;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: pre;
+    max-width: 100%;
+  }
+  .formula .cm { color: var(--ink-3); }
+
+  /* ============================================================
+     Callouts
+     ============================================================ */
+  .note {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--rule-strong);
+    background: var(--surface);
+    border-radius: 3px;
+    padding: .9rem 1.1rem;
+    font-size: .93rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 72ch;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+  }
+  .note .label {
+    font-family: var(--sans);
+    font-size: .655rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .note p { max-width: none; }
+  .note.defect { border-left-color: var(--defect); background: var(--defect-soft); }
+  .note.defect .label { color: var(--defect); }
+  .note.flag { border-left-color: var(--flag); background: var(--flag-soft); }
+  .note.flag .label { color: var(--flag); }
+  .note.verify { border-left-color: var(--verify); background: var(--accent-soft); }
+  .note.verify .label { color: var(--verify); }
+  .note.accent { border-left-color: var(--accent); background: var(--accent-soft); }
+  .note.accent .label { color: var(--accent-ink); }
+
+  /* ============================================================
+     Tables
+     ============================================================ */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .855rem; font-family: var(--sans); }
+  caption {
+    caption-side: bottom;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: .75rem;
+    color: var(--ink-3);
+    padding: .6rem .9rem;
+    border-top: 1px solid var(--rule);
+    line-height: 1.45;
+  }
+  th, td {
+    text-align: left;
+    padding: .5rem .8rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  thead th {
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: var(--sunk);
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.mono, .mono-cell { font-family: var(--mono); font-size: .78rem; }
+  tbody tr:hover { background: var(--sunk); }
+  .t-sub { color: var(--ink-3); font-size: .93em; display: block; }
+
+  /* ============================================================
+     Figure / diagram
+     ============================================================ */
+  figure { margin: 0; display: flex; flex-direction: column; gap: .6rem; }
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.3rem 1rem;
+    overflow-x: auto;
+  }
+  .diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+  figcaption { font-family: var(--sans); font-size: .75rem; color: var(--ink-3); line-height: 1.45; max-width: 70ch; }
+
+  .d-band { fill: var(--sunk); stroke: var(--rule); }
+  .d-box { fill: var(--surface); stroke: var(--rule-strong); }
+  .d-box-a { fill: var(--accent-soft); stroke: var(--accent); }
+  .d-label { font-family: var(--sans); font-size: 11px; font-weight: 600; fill: var(--ink); }
+  .d-sub { font-family: var(--mono); font-size: 9px; fill: var(--ink-3); }
+  .d-stage { font-family: var(--sans); font-size: 9px; font-weight: 700; letter-spacing: .1em; fill: var(--ink-3); text-transform: uppercase; }
+  .d-arrow { stroke: var(--rule-strong); stroke-width: 1.4; fill: none; }
+  .d-arrowhead { fill: var(--rule-strong); }
+
+  /* ============================================================
+     Key-figure strip
+     ============================================================ */
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .fig { background: var(--surface); padding: .85rem .95rem; display: flex; flex-direction: column; gap: .18rem; }
+  .fig .v {
+    font-family: var(--serif);
+    font-size: 1.42rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .fig .k {
+    font-family: var(--sans);
+    font-size: .655rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ============================================================
+     Definition rows (module map, state vars, glossary)
+     ============================================================ */
+  .defs { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); overflow: hidden; }
+  .def { display: grid; grid-template-columns: 1fr; gap: .15rem; padding: .7rem .9rem; border-bottom: 1px solid var(--rule); }
+  .def:last-child { border-bottom: none; }
+  @media (min-width: 620px) { .def { grid-template-columns: 200px minmax(0,1fr); gap: 1.1rem; align-items: baseline; } }
+  .def dt { font-family: var(--mono); font-size: .78rem; color: var(--accent-ink); font-weight: 600; }
+  .def dd { margin: 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
+  .defs.gloss .def dt { font-family: var(--serif); font-size: .95rem; color: var(--ink); }
+  .defs.gloss .def dt .abbr { color: var(--ink-3); font-weight: 400; }
+
+  /* ============================================================
+     Footer
+     ============================================================ */
+  .footer {
+    border-top: 1px solid var(--rule);
+    background: var(--surface);
+    margin-top: 2rem;
+  }
+  .footer-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2rem clamp(1.15rem, 4vw, 2.5rem) 3rem;
+    font-family: var(--sans);
+    font-size: .78rem;
+    color: var(--ink-3);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .btnrow { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .btn {
+    font-family: var(--sans); font-size: .82rem; font-weight: 600;
+    padding: .5rem .95rem; border-radius: 4px; text-decoration: none;
+    border: 1px solid var(--accent); color: var(--accent-ink); background: var(--accent-soft);
+  }
+  .btn.primary { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+  .btn:hover { filter: brightness(1.05); }
+  pre.sh {
+    background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    border-radius: 3px; padding: .9rem 1.1rem; font-family: var(--mono); font-size: .82rem;
+    line-height: 1.7; overflow-x: auto; margin: 0;
+  }
+  .dev-card {
+    border: 1px solid var(--rule); border-radius: 3px; background: var(--surface);
+    padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .2rem; max-width: 30rem;
+  }
+  .dev-card .name { font-family: var(--serif); font-size: 1.12rem; font-weight: 600; }
+  .dev-card .role { font-family: var(--sans); font-size: .8rem; color: var(--ink-3); }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Decision-support software &middot; R</div>
+    <h1>Buffalo Bioeconomic Model</h1>
+    <p class="standfirst">
+      Financial feasibility of dairy buffalo (Murrah) enterprises in North-West India:
+      bank-ready NPV, IRR, BCR, DSCR and payback, pre- and post-tax, for herds of
+      5&ndash;1,000 adult buffaloes over 5- or 10-year horizons &mdash; from a monthly
+      cohort herd engine driven entirely by an editable parameter workbook.
+    </p>
+    <div class="btnrow">
+      <a class="btn primary" href="https://khatkar.shinyapps.io/buffalo_planner/">Launch the app</a>
+      <a class="btn" href="method.html">Technical method</a>
+      <a class="btn" href="https://github.com/msk99/buffalo_econ">Source on GitHub</a>
+    </div>
+    <div class="masthead-meta">
+      <div><b>Version</b><span>2.0, August 2026</span></div>
+      <div><b>Partners</b><span>Adelaide University &middot; ICAR-CIRB Hisar &middot; LUVAS</span></div>
+      <div><b>Parameters</b><span>115 across 14 workbook sheets</span></div>
+      <div><b>Tests</b><span>169 automated, all passing</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <main class="col" style="grid-column: 1 / -1; max-width: 860px;">
+
+    <section id="how">
+      <h2><span class="num">01</span>How it works</h2>
+      <p>The engine couples three sub-models, each answering a different question:</p>
+      <dl class="defs">
+        <div class="def"><dt>Biological</dt><dd>A monthly cohort herd projection: reproduction
+          on a single calving-interval clock, parity-dependent yield, young-stock rearing
+          pipelines, and a fixed-herd policy in which culling balances the herd at its target
+          size.</dd></div>
+        <div class="def"><dt>Technological</dt><dd>The production requirements of a herd of a
+          given size: ration build-up by animal class, labour in fractional FTE, housing area,
+          and an equipment capacity model &mdash; all moving continuously with herd size, so
+          results have no jumps at arbitrary size boundaries.</dd></div>
+        <div class="def"><dt>Economic</dt><dd>Prices the quantities, assembles the operating
+          statement, applies Indian business taxation (entity forms, s.44AD, slab rates &mdash;
+          all held in the workbook), structures the bank loan, and computes every viability
+          metric from one cash-flow timeline.</dd></div>
+      </dl>
+      <p>
+        The full method &mdash; workbook contract, scaling mathematics, herd engine, taxation
+        and finance &mdash; is documented on the <a href="method.html">technical method page</a>.
+      </p>
+    </section>
+
+    <section id="install">
+      <h2><span class="num">02</span>Installation</h2>
+      <p>Requires R &ge; 4.2. Clone, install dependencies, and the setup script runs a
+         self-check (one model projection):</p>
+      <pre class="sh">git clone https://github.com/msk99/buffalo_econ.git
+cd buffalo_econ
+Rscript setup.R</pre>
+      <p>Run the interactive app locally:</p>
+      <pre class="sh">R -e 'shiny::runApp("app", launch.browser = TRUE)'</pre>
+      <p>Or use the hosted app directly at
+         <a href="https://khatkar.shinyapps.io/buffalo_planner/">khatkar.shinyapps.io/buffalo_planner</a>
+         &mdash; no installation needed.</p>
+    </section>
+
+    <section id="developers">
+      <h2><span class="num">03</span>Developers</h2>
+      <div class="dev-card">
+        <span class="name">Mehar Singh Khatkar</span>
+        <span class="role">Author, maintainer</span>
+      </div>
+      <p style="font-size:.9rem;color:var(--ink-3);">
+        Developed in partnership between Adelaide University, ICAR&ndash;Central Institute for
+        Research on Buffaloes (Hisar) and Lala Lajpat Rai University of Veterinary and Animal
+        Sciences.
+      </p>
+    </section>
+
+    <section id="cite">
+      <h2><span class="num">04</span>Citation and license</h2>
+      <p>
+        Citation metadata ships with the repository
+        (<a href="https://github.com/msk99/buffalo_econ/blob/main/CITATION.cff">CITATION.cff</a>)
+        &mdash; GitHub&rsquo;s &ldquo;Cite this repository&rdquo; button formats it for you.
+        The code is not yet licensed for reuse: all rights reserved pending agreement between
+        the project partners. You may read and clone it; a license will follow.
+      </p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div><strong>Buffalo Bioeconomic Model</strong> &middot; version 2.0 &middot; August 2026.</div>
+    <div>Adelaide University &middot; ICAR-CIRB Hisar &middot; LUVAS.</div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1787 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buffalo Bioeconomic Model &mdash; Technical Method</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; }
+  img, svg { max-width: 100%; }
+</style>
+</head>
+<body>
+<style>
+  /* ============================================================
+     Tokens -- light is the base; both dark states redefine tokens only.
+     ============================================================ */
+  :root {
+    --paper:        #F5F7F5;
+    --surface:      #FFFFFF;
+    --sunk:         #EBEFEC;
+    --ink:          #16211E;
+    --ink-2:        #47544F;
+    --ink-3:        #74827C;
+    --rule:         #D6DCD8;
+    --rule-strong:  #B8C2BC;
+    --accent:       #14655A;
+    --accent-ink:   #0E4A42;
+    --accent-soft:  #DDEAE6;
+    --flag:         #8A6A1F;
+    --flag-soft:    #F3EBD6;
+    --defect:       #9E4034;
+    --defect-soft:  #F6E4E0;
+    --verify:       #2E6B3F;
+    --shadow:       0 1px 2px rgba(22,33,30,.06), 0 8px 24px -16px rgba(22,33,30,.28);
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:       #101614;
+      --surface:     #171F1C;
+      --sunk:        #1C2522;
+      --ink:         #E5EAE7;
+      --ink-2:       #A8B5AF;
+      --ink-3:       #7B8983;
+      --rule:        #2B3833;
+      --rule-strong: #3C4B45;
+      --accent:      #5CBFA8;
+      --accent-ink:  #8AD6C3;
+      --accent-soft: #16322C;
+      --flag:        #C9A44F;
+      --flag-soft:   #2C2616;
+      --defect:      #D9796A;
+      --defect-soft: #32201C;
+      --verify:      #6FB585;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:       #101614;
+    --surface:     #171F1C;
+    --sunk:        #1C2522;
+    --ink:         #E5EAE7;
+    --ink-2:       #A8B5AF;
+    --ink-3:       #7B8983;
+    --rule:        #2B3833;
+    --rule-strong: #3C4B45;
+    --accent:      #5CBFA8;
+    --accent-ink:  #8AD6C3;
+    --accent-soft: #16322C;
+    --flag:        #C9A44F;
+    --flag-soft:   #2C2616;
+    --defect:      #D9796A;
+    --defect-soft: #32201C;
+    --verify:      #6FB585;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  /* ============================================================
+     Base
+     ============================================================ */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  code, kbd, samp, .mono { font-family: var(--mono); font-size: .86em; }
+
+  code {
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  /* ============================================================
+     Masthead
+     ============================================================ */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .masthead-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(2.4rem, 5vw, 4rem) clamp(1.15rem, 4vw, 2.5rem) clamp(1.9rem, 3.5vw, 2.6rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: .705rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2rem, 5.2vw, 3.15rem);
+    line-height: 1.08;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0;
+    max-width: 60ch;
+    font-size: clamp(1.02rem, 2.1vw, 1.18rem);
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .masthead-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 2.1rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: .78rem;
+    color: var(--ink-3);
+  }
+  .masthead-meta b {
+    display: block;
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    opacity: .8;
+    margin-bottom: .1rem;
+  }
+  .masthead-meta span { color: var(--ink-2); }
+
+  /* ============================================================
+     Shell -- sticky rail + column
+     ============================================================ */
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.8rem, 4vw, 3.2rem) clamp(1.15rem, 4vw, 2.5rem) 5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.6rem;
+    align-items: start;
+  }
+  @media (min-width: 1000px) {
+    .shell { grid-template-columns: 216px minmax(0, 1fr); gap: 3.4rem; }
+    .rail { position: sticky; top: 1.6rem; max-height: calc(100vh - 3.2rem); overflow-y: auto; }
+  }
+
+  .rail nav { display: flex; flex-direction: column; gap: .1rem; }
+  .rail .rail-title {
+    font-family: var(--sans);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: .6rem;
+    margin-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .rail a {
+    font-family: var(--sans);
+    font-size: .8rem;
+    line-height: 1.35;
+    color: var(--ink-2);
+    text-decoration: none;
+    padding: .32rem 0 .32rem .1rem;
+    display: flex;
+    gap: .55rem;
+    border-left: 2px solid transparent;
+    padding-left: .55rem;
+  }
+  .rail a:hover { color: var(--accent); border-left-color: var(--accent); }
+  .rail a .n {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    min-width: 1.05em;
+  }
+  .rail a:hover .n { color: var(--accent); }
+
+  /* ============================================================
+     Sections & headings
+     ============================================================ */
+  .col { min-width: 0; display: flex; flex-direction: column; gap: 3.2rem; }
+
+  section { scroll-margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.05rem; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.42rem, 3vw, 1.78rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    margin: 0;
+    padding-bottom: .7rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    text-wrap: balance;
+  }
+  h2 .num {
+    font-family: var(--sans);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    flex: none;
+    transform: translateY(-.15em);
+  }
+  h3 {
+    font-family: var(--serif);
+    font-size: 1.11rem;
+    font-weight: 600;
+    margin: .7rem 0 -.35rem;
+    letter-spacing: -.005em;
+    color: var(--ink);
+  }
+  h4 {
+    font-family: var(--sans);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: .5rem 0 -.5rem;
+  }
+
+  p { margin: 0; max-width: 68ch; }
+  section > ul, section > ol { margin: 0; padding-left: 1.25rem; max-width: 68ch; display: flex; flex-direction: column; gap: .45rem; }
+  li { padding-left: .15rem; }
+  li::marker { color: var(--ink-3); }
+
+  strong { font-weight: 600; }
+
+  /* ============================================================
+     Formula block
+     ============================================================ */
+  .formula {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: .95rem 1.15rem;
+    font-family: var(--mono);
+    font-size: .82rem;
+    line-height: 1.75;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: pre;
+    max-width: 100%;
+  }
+  .formula .cm { color: var(--ink-3); }
+
+  /* ============================================================
+     Callouts
+     ============================================================ */
+  .note {
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--rule-strong);
+    background: var(--surface);
+    border-radius: 3px;
+    padding: .9rem 1.1rem;
+    font-size: .93rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 72ch;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+  }
+  .note .label {
+    font-family: var(--sans);
+    font-size: .655rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .note p { max-width: none; }
+  .note.defect { border-left-color: var(--defect); background: var(--defect-soft); }
+  .note.defect .label { color: var(--defect); }
+  .note.flag { border-left-color: var(--flag); background: var(--flag-soft); }
+  .note.flag .label { color: var(--flag); }
+  .note.verify { border-left-color: var(--verify); background: var(--accent-soft); }
+  .note.verify .label { color: var(--verify); }
+  .note.accent { border-left-color: var(--accent); background: var(--accent-soft); }
+  .note.accent .label { color: var(--accent-ink); }
+
+  /* ============================================================
+     Tables
+     ============================================================ */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .855rem; font-family: var(--sans); }
+  caption {
+    caption-side: bottom;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: .75rem;
+    color: var(--ink-3);
+    padding: .6rem .9rem;
+    border-top: 1px solid var(--rule);
+    line-height: 1.45;
+  }
+  th, td {
+    text-align: left;
+    padding: .5rem .8rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  thead th {
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: var(--sunk);
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.mono, .mono-cell { font-family: var(--mono); font-size: .78rem; }
+  tbody tr:hover { background: var(--sunk); }
+  .t-sub { color: var(--ink-3); font-size: .93em; display: block; }
+
+  /* ============================================================
+     Figure / diagram
+     ============================================================ */
+  figure { margin: 0; display: flex; flex-direction: column; gap: .6rem; }
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.3rem 1rem;
+    overflow-x: auto;
+  }
+  .diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+  figcaption { font-family: var(--sans); font-size: .75rem; color: var(--ink-3); line-height: 1.45; max-width: 70ch; }
+
+  .d-band { fill: var(--sunk); stroke: var(--rule); }
+  .d-box { fill: var(--surface); stroke: var(--rule-strong); }
+  .d-box-a { fill: var(--accent-soft); stroke: var(--accent); }
+  .d-label { font-family: var(--sans); font-size: 11px; font-weight: 600; fill: var(--ink); }
+  .d-sub { font-family: var(--mono); font-size: 9px; fill: var(--ink-3); }
+  .d-stage { font-family: var(--sans); font-size: 9px; font-weight: 700; letter-spacing: .1em; fill: var(--ink-3); text-transform: uppercase; }
+  .d-arrow { stroke: var(--rule-strong); stroke-width: 1.4; fill: none; }
+  .d-arrowhead { fill: var(--rule-strong); }
+
+  /* ============================================================
+     Key-figure strip
+     ============================================================ */
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .fig { background: var(--surface); padding: .85rem .95rem; display: flex; flex-direction: column; gap: .18rem; }
+  .fig .v {
+    font-family: var(--serif);
+    font-size: 1.42rem;
+    font-weight: 600;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .fig .k {
+    font-family: var(--sans);
+    font-size: .655rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ============================================================
+     Definition rows (module map, state vars, glossary)
+     ============================================================ */
+  .defs { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); overflow: hidden; }
+  .def { display: grid; grid-template-columns: 1fr; gap: .15rem; padding: .7rem .9rem; border-bottom: 1px solid var(--rule); }
+  .def:last-child { border-bottom: none; }
+  @media (min-width: 620px) { .def { grid-template-columns: 200px minmax(0,1fr); gap: 1.1rem; align-items: baseline; } }
+  .def dt { font-family: var(--mono); font-size: .78rem; color: var(--accent-ink); font-weight: 600; }
+  .def dd { margin: 0; font-size: .93rem; color: var(--ink-2); line-height: 1.5; }
+  .defs.gloss .def dt { font-family: var(--serif); font-size: .95rem; color: var(--ink); }
+  .defs.gloss .def dt .abbr { color: var(--ink-3); font-weight: 400; }
+
+  /* ============================================================
+     Footer
+     ============================================================ */
+  .footer {
+    border-top: 1px solid var(--rule);
+    background: var(--surface);
+    margin-top: 2rem;
+  }
+  .footer-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2rem clamp(1.15rem, 4vw, 2.5rem) 3rem;
+    font-family: var(--sans);
+    font-size: .78rem;
+    color: var(--ink-3);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  html { scroll-behavior: smooth; }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Technical Method</div>
+    <h1>Buffalo Bioeconomic Model: method of the engine</h1>
+    <p class="standfirst">
+      A complete description of the calculation engine: the parameter workbook that drives it,
+      the continuous scaling method, the coupled biological, technological and economic models
+      at its core, and the single cash-flow timeline on which every viability metric is computed.
+    </p>
+    <div class="masthead-meta">
+      <div><b>Version</b><span>Engine v2.0, August 2026</span></div>
+      <div><b>Partners</b><span>Adelaide University &middot; ICAR-CIRB Hisar &middot; LUVAS</span></div>
+      <div><b>Parameters</b><span>115 across 14 workbook sheets</span></div>
+      <div><b>Tests</b><span>169 automated, all passing</span></div>
+      <div><b>Status</b><span>Deployed; validation gate open</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <aside class="rail">
+    <nav aria-label="Contents">
+      <div class="rail-title">Contents</div>
+      <a href="#scope"><span class="n">0</span><span>Scope and status</span></a>
+      <a href="#architecture"><span class="n">1</span><span>Model framework</span></a>
+      <a href="#workbook"><span class="n">2</span><span>Parameter workbook</span></a>
+      <a href="#scaling"><span class="n">3</span><span>Scaling to a herd size</span></a>
+      <a href="#herd"><span class="n">4</span><span>Herd engine</span></a>
+      <a href="#milk"><span class="n">5</span><span>Milk production</span></a>
+      <a href="#costs"><span class="n">6</span><span>Operating costs</span></a>
+      <a href="#capital"><span class="n">7</span><span>Capital &amp; depreciation</span></a>
+      <a href="#tax"><span class="n">8</span><span>Taxation</span></a>
+      <a href="#finance"><span class="n">9</span><span>Finance &amp; viability</span></a>
+      <a href="#sensitivity"><span class="n">10</span><span>Sensitivity</span></a>
+      <a href="#outputs"><span class="n">11</span><span>Outputs</span></a>
+      <a href="#verification"><span class="n">12</span><span>Verification</span></a>
+      <a href="#limits"><span class="n">13</span><span>Assumptions register</span></a>
+      <a href="#appendix"><span class="n">A</span><span>Reference tables</span></a>
+      <a href="#glossary"><span class="n">B</span><span>Glossary</span></a>
+      <a href="#references"><span class="n">C</span><span>References</span></a>
+    </nav>
+  </aside>
+
+  <main class="col">
+
+    <!-- ===================================================== 0 -->
+    <section id="scope">
+      <h2><span class="num">00</span>Scope and status</h2>
+      <p>
+        This document describes <em>how the engine works</em>. It is a method
+        reference, not a results report. Results for the current parameter set, and the findings
+        arising from them, are in the validation record; every assumption taken during the build
+        is in the decision record; and the evidence behind each default value is in the parameter
+        rationale document.
+      </p>
+      <p>
+        The model produces bank-ready financial projections &mdash; NPV, IRR, BCR, DSCR, payback, pre-
+        and post-tax &mdash; for dairy buffalo (Murrah) enterprises of 5 to 1,000 adult buffaloes in
+        North-West India, over 5- or 10-year horizons. It is delivered as an interactive web
+        application and a downloadable Excel project report, both driven entirely by a single
+        parameter workbook that domain experts edit directly.
+      </p>
+      <div class="note accent">
+        <span class="label">Status</span>
+        <p>
+          The engine is built and tested end to end, and the application is deployed.
+          <strong>The validation gate remains open:</strong> the model has not yet been reconciled
+          against two real reference project reports (a NABARD model report and a CIRB farm
+          dataset). Until that reconciliation is signed off, outputs should be treated as
+          methodologically sound but not yet bank-ready.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================== 1 -->
+    <section id="architecture">
+      <h2><span class="num">01</span>Model framework</h2>
+      <p>
+        The engine is a <strong>bioeconomic model</strong> in the strict sense: three coupled
+        sub-models &mdash; biological, technological and economic &mdash; fed by one data layer and drained
+        by one delivery layer. Each sub-model answers a different question, and the coupling
+        between them is one-directional, so no module reaches backwards and every number in the
+        output can be traced to its origin.
+      </p>
+
+      <dl class="defs">
+        <div class="def"><dt>Biological model</dt><dd><em>What does the herd do?</em> Reproduction,
+          lactation, parity, growth of young stock, mortality and culling &mdash; a monthly cohort
+          projection that converts a target herd size into animal-months by class and litres of
+          milk per month.</dd></div>
+        <div class="def"><dt>Technological model</dt><dd><em>What does production require?</em> The
+          production technology that a herd of a given size needs: feed quantities from a ration
+          build-up, labour in fractional full-time equivalents, housing area, civil works, and
+          machines from an equipment capacity model &mdash; physical quantities, chosen continuously in
+          herd size.</dd></div>
+        <div class="def"><dt>Economic model</dt><dd><em>What is it worth?</em> Prices the physical
+          quantities, assembles the operating statement, applies Indian business taxation,
+          structures the loan, and discounts one cash-flow timeline into NPV, IRR, BCR, payback
+          and DSCR.</dd></div>
+      </dl>
+
+      <figure>
+        <div class="diagram">
+          <svg viewBox="0 0 960 620" role="img" aria-label="Layered framework: data layer feeds the biological, technological and economic models, which deliver to the app and report">
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" class="d-arrowhead"/>
+              </marker>
+            </defs>
+
+            <!-- DATA band -->
+            <rect x="8" y="14" width="944" height="96" rx="4" class="d-band"/>
+            <text x="22" y="34" class="d-stage">Data layer &mdash; the parameter workbook</text>
+            <rect x="22" y="44" width="200" height="52" rx="3" class="d-box-a"/>
+            <text x="34" y="64" class="d-label">parameters_v3 workbook</text>
+            <text x="34" y="80" class="d-sub">115 params &middot; ration &middot; equipment</text>
+            <rect x="248" y="44" width="150" height="52" rx="3" class="d-box"/>
+            <text x="260" y="64" class="d-label">params_load</text>
+            <text x="260" y="80" class="d-sub">typed object, anchors</text>
+            <rect x="424" y="44" width="170" height="52" rx="3" class="d-box"/>
+            <text x="436" y="64" class="d-label">params_validate</text>
+            <text x="436" y="80" class="d-sub">schema &middot; range &middot; consistency</text>
+            <rect x="620" y="44" width="170" height="52" rx="3" class="d-box-a"/>
+            <text x="632" y="64" class="d-label">params_scale</text>
+            <text x="632" y="80" class="d-sub">values at herd size n</text>
+            <path d="M 222 70 L 242 70" class="d-arrow" marker-end="url(#ah)"/>
+            <path d="M 398 70 L 418 70" class="d-arrow" marker-end="url(#ah)"/>
+            <path d="M 594 70 L 614 70" class="d-arrow" marker-end="url(#ah)"/>
+
+            <path d="M 705 110 L 705 128" class="d-arrow" marker-end="url(#ah)"/>
+            <path d="M 300 110 L 300 128" class="d-arrow" marker-end="url(#ah)"/>
+
+            <!-- BIOLOGICAL band -->
+            <rect x="8" y="132" width="944" height="96" rx="4" class="d-band"/>
+            <text x="22" y="152" class="d-stage">Biological model &mdash; herd_cohort</text>
+            <rect x="22" y="162" width="210" height="52" rx="3" class="d-box"/>
+            <text x="34" y="182" class="d-label">Reproduction clock</text>
+            <text x="34" y="198" class="d-sub">calving interval primary</text>
+            <rect x="258" y="162" width="220" height="52" rx="3" class="d-box-a"/>
+            <text x="270" y="182" class="d-label">Monthly cohort projection</text>
+            <text x="270" y="198" class="d-sub">fixed herd &middot; fractional animals</text>
+            <rect x="504" y="162" width="200" height="52" rx="3" class="d-box"/>
+            <text x="516" y="182" class="d-label">Parity &amp; yield</text>
+            <text x="516" y="198" class="d-sub">peak back-solved from mean</text>
+            <rect x="730" y="162" width="210" height="52" rx="3" class="d-box"/>
+            <text x="742" y="182" class="d-label">Young-stock pipelines</text>
+            <text x="742" y="198" class="d-sub">calf gate &middot; heifer rearing</text>
+
+            <path d="M 480 228 L 480 246" class="d-arrow" marker-end="url(#ah)"/>
+
+            <!-- TECHNOLOGICAL band -->
+            <rect x="8" y="250" width="944" height="96" rx="4" class="d-band"/>
+            <text x="22" y="270" class="d-stage">Technological model &mdash; production requirements</text>
+            <rect x="22" y="280" width="210" height="52" rx="3" class="d-box"/>
+            <text x="34" y="300" class="d-label">Ration &amp; feeding</text>
+            <text x="34" y="316" class="d-sub">kg/day &times; class, interpolated</text>
+            <rect x="258" y="280" width="220" height="52" rx="3" class="d-box"/>
+            <text x="270" y="300" class="d-label">Labour organisation</text>
+            <text x="270" y="316" class="d-sub">fractional FTE &middot; family split</text>
+            <rect x="504" y="280" width="200" height="52" rx="3" class="d-box"/>
+            <text x="516" y="300" class="d-label">Housing &amp; civil works</text>
+            <text x="516" y="316" class="d-sub">covered/open area &times; rate</text>
+            <rect x="730" y="280" width="210" height="52" rx="3" class="d-box-a"/>
+            <text x="742" y="300" class="d-label">Equipment capacity model</text>
+            <text x="742" y="316" class="d-sub">whole units, spread thresholds</text>
+
+            <path d="M 480 346 L 480 364" class="d-arrow" marker-end="url(#ah)"/>
+
+            <!-- ECONOMIC band -->
+            <rect x="8" y="368" width="944" height="150" rx="4" class="d-band"/>
+            <text x="22" y="388" class="d-stage">Economic model &mdash; valuation, tax, finance</text>
+            <rect x="22" y="398" width="200" height="52" rx="3" class="d-box"/>
+            <text x="34" y="418" class="d-label">Revenue &amp; P&amp;L</text>
+            <text x="34" y="434" class="d-sub">revenue &middot; pnl</text>
+            <rect x="248" y="398" width="200" height="52" rx="3" class="d-box"/>
+            <text x="260" y="418" class="d-label">Depreciation</text>
+            <text x="260" y="434" class="d-sub">book SL &middot; tax WDV</text>
+            <rect x="474" y="398" width="200" height="52" rx="3" class="d-box"/>
+            <text x="486" y="418" class="d-label">Taxation</text>
+            <text x="486" y="434" class="d-sub">entity &middot; 44AD &middot; slabs</text>
+            <rect x="700" y="398" width="240" height="52" rx="3" class="d-box"/>
+            <text x="712" y="418" class="d-label">Loan &amp; debt service</text>
+            <text x="712" y="434" class="d-sub">moratorium &middot; DSCR</text>
+            <rect x="248" y="458" width="426" height="48" rx="3" class="d-box-a"/>
+            <text x="260" y="477" class="d-label">finance_viability &mdash; one cash-flow timeline</text>
+            <text x="260" y="492" class="d-sub">NPV &middot; IRR &middot; BCR &middot; payback, pre- and post-tax, project and equity</text>
+
+            <path d="M 480 518 L 480 536" class="d-arrow" marker-end="url(#ah)"/>
+
+            <!-- DELIVERY band -->
+            <rect x="8" y="540" width="944" height="70" rx="4" class="d-band"/>
+            <text x="22" y="560" class="d-stage">Delivery &mdash; run_model orchestrator</text>
+            <rect x="200" y="568" width="180" height="34" rx="3" class="d-box"/>
+            <text x="212" y="589" class="d-label">Shiny application</text>
+            <rect x="410" y="568" width="180" height="34" rx="3" class="d-box"/>
+            <text x="422" y="589" class="d-label">Excel project report</text>
+            <rect x="620" y="568" width="200" height="34" rx="3" class="d-box"/>
+            <text x="632" y="589" class="d-label">Sensitivity &amp; breakeven</text>
+          </svg>
+        </div>
+        <figcaption>
+          The layered framework. The data layer resolves the workbook to one herd size; the
+          biological model produces animal-months and litres; the technological model converts herd
+          size into physical requirements; the economic model prices, taxes and discounts them.
+          Tinted boxes mark the four defining design choices: workbook as sole source of truth,
+          continuous scaling, a fixed-herd cohort projection, and one viability timeline.
+        </figcaption>
+      </figure>
+
+      <h3>Why the layers are one-directional</h3>
+      <p>
+        Biology does not depend on prices, and technology does not depend on tax. Keeping the flow
+        one-way means each layer can be verified on its own terms &mdash; conservation laws in the
+        biological model, capacity arithmetic in the technological model, accounting identities in
+        the economic model &mdash; and a change in any layer propagates forward predictably. It also
+        makes the model auditable: a reviewer can reproduce any output line by walking the layers
+        in order.
+      </p>
+
+      <h3>One timeline</h3>
+      <p>
+        The economic model builds a single cash-flow vector &mdash; all capital at
+        <span class="mono">t&nbsp;=&nbsp;0</span>, operations at the end of Years&nbsp;1&hellip;<em>n</em>,
+        terminal value inside Year&nbsp;<em>n</em> &mdash; and every metric reads that one vector.
+        The justification is interpretability: NPV, IRR and BCR are only mutually consistent if
+        they discount the same flows on the same clock. Computed this way,
+        BCR&nbsp;&gt;&nbsp;1 exactly when NPV&nbsp;&gt;&nbsp;0 at the same rate, and IRR is the
+        rate that zeroes the same NPV &mdash; properties asserted by automated test rather than assumed.
+      </p>
+    </section>
+
+    <!-- ===================================================== 2 -->
+    <section id="workbook">
+      <h2><span class="num">02</span>The parameter workbook</h2>
+      <p>
+        Every number in the model lives in <code>parameters_v3_2026-08.xlsx</code> &mdash; 115 parameters
+        across 14 sheets &mdash; because the people who know the right values are dairy scientists and
+        economists, not programmers. The workbook is therefore designed as the primary interface:
+        every parameter sheet uses the same eleven columns, so the loader reads any of them without
+        special cases and a reviewer always knows where to look.
+      </p>
+
+      <div class="tw">
+        <table>
+          <caption>Column contract, repeated identically on every parameter sheet.</caption>
+          <thead>
+            <tr><th>Column</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">parameter</td><td>The name the model looks up. Must never be renamed.</td></tr>
+            <tr><td class="mono">label</td><td>Human-readable description shown in the app and reports.</td></tr>
+            <tr><td class="mono">small_10</td><td>Value at a herd of 10 adult buffaloes (the lower anchor).</td></tr>
+            <tr><td class="mono">large_200</td><td>Value at a herd of 200 adult buffaloes (the upper anchor).</td></tr>
+            <tr><td class="mono">unit</td><td>Unit of measurement.</td></tr>
+            <tr><td class="mono">basis</td><td>What the number is measured against &mdash; per head, per farm &mdash; so the two are never mixed.</td></tr>
+            <tr><td class="mono">scale_mode</td><td>How the value moves between the anchors. See &sect;3.</td></tr>
+            <tr><td class="mono">rounding</td><td><span class="mono-cell">none</span>, <span class="mono-cell">int</span> or <span class="mono-cell">ceil</span>.</td></tr>
+            <tr><td class="mono">min, max</td><td>Validation range. The loader refuses values outside it.</td></tr>
+            <tr><td class="mono">source_note</td><td>Where the number comes from, and any decision taken about it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Anchor herd sizes are <em>read from the column headers</em>, not hard-coded. Renaming
+        <code>small_10</code> to <code>small_15</code> moves the anchor; no code changes. Sheet
+        <span class="mono">13_Schema</span> restates the contract for all 115 parameters and the
+        loader checks that the parameter sheets and the schema agree exactly, in both directions.
+      </p>
+
+      <h3>Three integrity rules</h3>
+      <p>
+        A spreadsheet is a forgiving medium, and a parser is not. Three editing rules close the
+        gap between what a human writer might reasonably do and what a machine can safely read:
+      </p>
+      <ol>
+        <li><strong>No explanatory rows below a data block.</strong> A parser cannot distinguish a
+          comment from a datum by looking at it; free text inside the data range is either silently
+          discarded or silently mis-read, and both are unacceptable. Commentary belongs in
+          <span class="mono">source_note</span>.</li>
+        <li><strong>No parameter name may appear twice</strong> anywhere in the workbook. With
+          duplicate names, which value wins depends on physical row order &mdash; an invisible and
+          fragile property of the file.</li>
+        <li><strong>No blank anchor cell.</strong> A blank is ambiguous between &ldquo;zero&rdquo; and
+          &ldquo;forgotten&rdquo;, and the two have very different consequences. Enter <span class="mono">0</span>
+          when zero is meant; the loader treats a blank as an error.</li>
+      </ol>
+
+      <h3>Validation</h3>
+      <p>
+        <code>params_validate.R</code> runs before anything downstream trusts the data, collects
+        every problem, and reports them together so a reviewer fixes the workbook once rather than
+        discovering faults one run at a time. Errors stop execution; warnings print and continue.
+      </p>
+      <ul>
+        <li>Names present, unique, lower-snake-case; modes and rounding values recognised.</li>
+        <li>Anchor cells populated and numeric wherever the mode requires a number.</li>
+        <li>Parameters declared <span class="mono">constant</span> genuinely equal at both anchors.</li>
+        <li>Every value inside its declared <span class="mono">min</span>&ndash;<span class="mono">max</span> range.</li>
+        <li>Parity shares sum to 1; lactation fits inside the calving interval; service period plus
+          gestation reconciles with the calving interval (warning if it does not).</li>
+        <li>Ration component cost equals kg &times; rate, and stated totals equal the sum of components.</li>
+        <li>Equipment: positive capacities, sane thresholds, and a <em>warning when two items
+          activate at the same herd size</em> &mdash; stacked steps produce discontinuities in results
+          that no single purchase justifies (&sect;3).</li>
+        <li>Every app default that names a source parameter resolves to one that exists.</li>
+      </ul>
+    </section>
+
+    <!-- ===================================================== 3 -->
+    <section id="scaling">
+      <h2><span class="num">03</span>Scaling to a herd size</h2>
+      <p>
+        A tool used to support loan applications must produce results that are
+        <strong>continuous and monotonic in herd size</strong>: two farmers whose plans differ by
+        one buffalo should not receive materially different appraisals. That requirement drives
+        the whole scaling design. There are no size categories anywhere in the model. Each
+        parameter is defined at two anchor herd sizes &mdash; 10 and 200 adult buffaloes &mdash; and moves
+        between them according to a <span class="mono">scale_mode</span> declared in the workbook,
+        so the behaviour is stated by the domain expert rather than assumed by the code.
+      </p>
+
+      <div class="tw">
+        <table>
+          <caption>The six scale modes, with the count of parameters using each in the current workbook.</caption>
+          <thead>
+            <tr><th>Mode</th><th class="num">n</th><th>Behaviour</th><th>Typical use</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">constant</td><td class="num">82</td><td>Same value at every herd size.</td><td>Wage rate, lactation length, tax rates</td></tr>
+            <tr><td class="mono">log</td><td class="num">27</td><td>Interpolate on the logarithm of herd size.</td><td>Prices, unit costs, purchase price, shed rate</td></tr>
+            <tr><td class="mono">linear</td><td class="num">0</td><td>Straight-line interpolation on herd size.</td><td>Reserved for genuinely proportional relationships</td></tr>
+            <tr><td class="mono">derived</td><td class="num">1</td><td>Computed from other parameters, never entered.</td><td>Dry days</td></tr>
+            <tr><td class="mono">capacity</td><td class="num">&mdash;</td><td>Whole units of an indivisible asset, from a capacity rule.</td><td>Equipment (19 items on their own sheet)</td></tr>
+            <tr><td class="mono">regime</td><td class="num">5</td><td>A mode chosen by the user, not a function of size.</td><td>Entity form, 44AD toggle, loan tenure, terminal basis</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Logarithmic interpolation</h3>
+      <p>
+        Economies of scale are approximately power laws &mdash; unit costs fall with size at a
+        diminishing rate &mdash; so interpolation runs on <span class="mono">log&nbsp;n</span>. The
+        choice is empirical as well as theoretical: tested on shed construction rate, linear-in-<em>n</em>
+        interpolation produces a 3.8&times; change of slope between segments, while
+        linear-in-log-<em>n</em> produces 1.2&times; &mdash; very nearly a straight line, and closer to the
+        underlying economics.
+      </p>
+
+      <div class="formula">t = (ln n &minus; ln n_lo) / (ln n_hi &minus; ln n_lo),  clamped to [0, 1]
+v(n) = v_lo + (v_hi &minus; v_lo) &middot; t
+
+<span class="cm">at n = 50, anchors 10 and 200:</span>
+t = ln(50/10) / ln(200/10) = 1.6094 / 2.9957 = 0.5372
+<span class="cm">milk price   &rarr; 70 + (65 &minus; 70) &times; 0.5372   = Rs 67.31 / litre</span>
+<span class="cm">purchase price &rarr; 130000 + (110000 &minus; 130000) &times; 0.5372 = Rs 119,255</span></div>
+
+      <h3>Clamping: never extrapolate</h3>
+      <p>
+        Above the upper anchor every interpolated parameter holds its <span class="mono">large_200</span>
+        value; below the lower anchor it holds <span class="mono">small_10</span>. A trend fitted to
+        two points carries no information about what lies outside them, and holding flat is the
+        conservative reading &mdash; it assumes no procurement, price or labour advantage beyond the last
+        size for which there is expert evidence.
+      </p>
+      <p>
+        This does <em>not</em> mean cost stops rising above 200 head. Per-head values are still
+        multiplied by herd size and the equipment capacity model keeps adding units, so a 1,000-head
+        farm still costs about 4.9&times; a 200-head farm against a herd five times larger. What stops
+        changing is the <em>unit</em> economics; the practical consequence is a change of slope at
+        exactly 200 head, not a step.
+      </p>
+
+      <h3>Equipment: a capacity model</h3>
+      <p>
+        Machines are genuinely indivisible &mdash; a farm buys a whole chaff cutter or none &mdash; so
+        equipment is the one place the model deliberately keeps steps. Each item carries a minimum
+        herd size, an optional maximum, a capacity in head, a unit cost and a life:
+      </p>
+      <div class="formula">units = 0                        if n &lt; min_herd or n &gt; max_herd
+units = ceiling(n / capacity_head)   otherwise</div>
+      <p>
+        The design constraint is that activation thresholds are <em>deliberately spread apart</em>:
+        1, 18, 28, 35, 45, 50, 55, 65, 80, 95, 110, 121, 140, 160. Real capital lumpiness is
+        decorrelated &mdash; a farm buys its first milking machine at one herd size, its first cooler at
+        another, its first tractor at a third. Each individual step is small relative to the farm
+        that takes it; dozens of steps landing on one herd size would manufacture a cliff that no
+        single purchase justifies. No two items switch on together, and the validator warns if an
+        edit ever makes them.
+      </p>
+      <p>
+        Tested across every herd size from 10 to 1,000: total capital is strictly increasing,
+        capital per head falls smoothly, and the largest change caused by adding a single animal is
+        3.0% &mdash; the first tractor at 110 head, a real cost that should be visible.
+      </p>
+
+      <h3>Ration interpolation</h3>
+      <p>
+        Feed is not collapsed into a single cost. Each feedstuff row is interpolated on
+        <span class="mono">kg/day</span> and <span class="mono">rate/kg</span> separately, then
+        multiplied, so the ration stays visible and auditable at any herd size &mdash; a reviewer can ask
+        &ldquo;how much concentrate, at what price?&rdquo; and the model can answer.
+      </p>
+      <div class="figs">
+        <div class="fig"><span class="v">240.38</span><span class="k">Lactating &#8377;/day</span></div>
+        <div class="fig"><span class="v">110.75</span><span class="k">Dry &#8377;/day</span></div>
+        <div class="fig"><span class="v">101.57</span><span class="k">Heifer &#8377;/day</span></div>
+        <div class="fig"><span class="v">34.63</span><span class="k">Calf &#8377;/day</span></div>
+      </div>
+      <p class="mono" style="font-size:.78rem;color:var(--ink-3);">Ration cost per animal per day at 50 head. Wastage is already inside these rates.</p>
+    </section>
+
+    <!-- ===================================================== 4 -->
+    <section id="herd">
+      <h2><span class="num">04</span>The herd engine</h2>
+      <p>
+        <code>herd_cohort.R</code> &mdash; the biological model &mdash; advances the herd one month at a time
+        over the full horizon (60 or 120 steps). The monthly step is what makes staggered purchase,
+        a realistic Year-1 ramp, parity-dependent yield and heifer attrition representable at all &mdash;
+        none of them can be expressed on an annual grid. A single 5-year run completes in about
+        0.3&nbsp;seconds, so the finer step costs nothing perceptible.
+      </p>
+
+      <h3>Fractional animals</h3>
+      <p>
+        The projection is an <strong>expected value over a population</strong>, not a simulation of
+        one particular farm. Animal counts are therefore carried as fractions throughout and rounded
+        only for display; labour is carried as fractional full-time equivalents. The justification
+        is numerical as much as statistical: integer rounding at small herd sizes manufactures
+        artefacts &mdash; a 15% culling rate applied to 9 versus 10 head rounds from
+        <span class="mono">round(1.35)&nbsp;=&nbsp;1</span> to
+        <span class="mono">round(1.5)&nbsp;=&nbsp;2</span> culls, a 48% jump in a first-order revenue
+        and replacement stream from one added animal. An expected-value model has no business
+        containing such steps; whole numbers appear only where an asset is genuinely indivisible,
+        which the capacity mode handles.
+      </p>
+
+      <h3>State carried between months</h3>
+      <dl class="defs">
+        <div class="def"><dt>cohorts</dt><dd>Adult groups by entry month, used to time the first lactation of each intake precisely.</dd></div>
+        <div class="def"><dt>settled</dt><dd>Adults that have completed one full calving interval, merged into a single pool on the steady-state in-milk fraction.</dd></div>
+        <div class="def"><dt>parity</dt><dd>Four compartments &mdash; 1, 2&ndash;3, 4, 5+ &mdash; carrying the yield multiplier and determining which animals are eligible for voluntary culling.</dd></div>
+        <div class="def"><dt>fem[0&hellip;35]</dt><dd>Female pipeline by age in months, from birth to first calving at 36 months.</dd></div>
+        <div class="def"><dt>male[0&hellip;5]</dt><dd>Male pipeline through the calf phase, sold at its end.</dd></div>
+        <div class="def"><dt>purchased_pool</dt><dd>Purchased adults still in the herd, tracked because only they generate a s.36(1)(vi) tax deduction on death.</dd></div>
+      </dl>
+
+      <h3>The fixed-herd policy</h3>
+      <p>
+        The adult herd is held at the target size and <strong>culling is the balancing
+        variable</strong>. The justification is comparability: the tool appraises <em>an
+        enterprise of a stated size</em>, and only a fixed herd makes a 50-head plan a 50-head plan
+        throughout &mdash; a herd that drifts up or down is silently appraising a different farm each
+        year. Every retained heifer that reaches first calving joins the herd; any resulting
+        surplus is culled and sold at salvage. Voluntary culling is capped so that it never cuts so
+        deep that a replacement purchase becomes necessary, and purchases only cover what the
+        pipeline cannot.
+      </p>
+      <div class="formula">available   = A &minus; deaths + maturities
+culls_base  = min( A &middot; cull_rate_m , eligible_parity_4plus , max(0, available &minus; target) )
+culls_extra = max( 0 , available &minus; culls_base &minus; target )
+repl_buy    = max( 0 , target &minus; (available &minus; culls_base &minus; culls_extra) )</div>
+      <p>
+        In the early years, before the home-bred pipeline matures at month 36, deaths are replaced
+        by purchasing adults, so the herd is genuinely fixed rather than sagging by roughly 3% a
+        year. From about Year&nbsp;4 the pipeline takes over, purchases stop, and surplus culling
+        begins. Voluntary culling draws from parity 4+ only, because that is what voluntary culling
+        is &mdash; the removal of older, lower-producing stock.
+      </p>
+      <div class="note flag">
+        <span class="label">Emergent behaviour &mdash; for review</span>
+        <p>
+          Steady-state culling settles near <strong>25% a year</strong>, above the workbook culling
+          rate of 15&ndash;20%. With 80% heifer retention the pipeline simply produces more replacements
+          than voluntary culling and mortality absorb, and the fixed-herd policy culls the surplus.
+          <code>heifer_retention_pct</code> is the lever if less churn is wanted.
+        </p>
+      </div>
+
+      <h3>Sequence within one month</h3>
+      <ol>
+        <li><strong>Purchase batches.</strong> The Year-1 herd arrives in <code>staggered_purchase_batches</code>
+          equal instalments, <code>staggered_purchase_interval_months</code> apart; each enters parity
+          group 2&ndash;3, matching the purchase-price basis of a 2nd&ndash;3rd-lactation Murrah.</li>
+        <li><strong>Adult deaths</strong> at the monthly-equivalent mortality rate.</li>
+        <li><strong>Pipeline ageing.</strong> Calves and heifers advance one month under class-specific
+          mortality; males and non-retained females leave at the calf gate; the oldest heifer cohort
+          reaches first calving.</li>
+        <li><strong>Steady-state balance</strong> &mdash; the formulas above.</li>
+        <li><strong>Apply to cohorts:</strong> exits are taken proportionally, joiners and any purchases
+          are added.</li>
+        <li><strong>Parity advance.</strong> Animals move up one parity per calving interval;
+          culls are drawn from parity 5+ downward; first-calvers enter parity 1 and purchases parity 2&ndash;3.</li>
+        <li><strong>Milk</strong> for the month, from the in-milk count and the parity mix.</li>
+        <li><strong>Births</strong>, split by sex ratio into the two pipelines.</li>
+      </ol>
+
+      <h3>Lactation timing</h3>
+      <p>
+        Purchased animals arrive freshly calved, so each batch is in milk from arrival for
+        <code>lactation_days</code>, dry until its calving interval completes, and on the
+        steady-state fraction thereafter &mdash; which is what produces the Year-1 production ramp
+        rather than full output from day one. Rates given per year are converted with
+        <span class="mono">1&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;annual)<sup>1/12</sup></span> rather than
+        divided by twelve, so twelve monthly applications compound to exactly the annual rate.
+      </p>
+      <div class="note flag">
+        <span class="label">Consequence &mdash; for review</span>
+        <p>
+          Both purchase batches dry off together around months 10&ndash;16, so Year&nbsp;2 shows a genuine
+          dip in milk, turnover and DSCR. This is real for a synchronised purchase; more batches
+          smooth it, and a 12&ndash;18 month moratorium &mdash; a workbook parameter &mdash; is the standard bank
+          structuring answer.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================== 5 -->
+    <section id="milk">
+      <h2><span class="num">05</span>Milk production</h2>
+      <p>
+        <strong>One reproductive clock governs everything.</strong> Lactation length, dry period,
+        calving interval and service period all describe the same cycle; if they are entered
+        independently they can disagree, and the herd's in-milk share &mdash; the single largest driver
+        of revenue &mdash; becomes ill-defined. The model therefore takes calving interval as primary,
+        derives dry days from it, and retains service period only as a validator cross-check.
+      </p>
+      <div class="formula">CI_days   = calving_interval_months &times; 30.42
+dry_days  = CI_days &minus; lactation_days          <span class="cm">derived, validated &gt; 0</span>
+f_milk    = lactation_days / CI_days          <span class="cm">share of adults in milk</span>
+
+<span class="cm">at 50 head: CI = 15.46 months = 470.4 d &rarr; dry 170.4 d &rarr; f_milk = 0.6378</span></div>
+
+      <h3>Parity back-solve</h3>
+      <p>
+        Yield is entered as the <em>herd average</em> across parities, which is what a domain expert
+        can observe on a real farm. Peak-parity yield is back-solved so that the workbook's parity
+        distribution reproduces exactly the entered average &mdash; the model can then vary yield by
+        parity without the user having to supply a peak figure they would only be guessing at.
+      </p>
+      <div class="formula">parity_weighted_mult = &Sigma; ( share_i &times; yield_mult_i )
+yield_peak           = yield_herd_avg / parity_weighted_mult
+
+<span class="cm">shares  0.275 / 0.375 / 0.225 / 0.125   (parity 1 / 2&ndash;3 / 4 / 5+)</span>
+<span class="cm">mults   0.80  / 1.00  / 1.00  / 0.90  &rarr; weighted 0.9325</span>
+<span class="cm">at 50 head: 10.54 / 0.9325 = 11.30 L/day at peak parity</span></div>
+      <p>
+        Monthly milk is then <span class="mono">in_milk &times; yield_peak &times; parity_mult &times; 30.42</span>,
+        where <span class="mono">parity_mult</span> is the herd's actual parity mix that month &mdash; it
+        starts at 1.0 for a purchased 2nd&ndash;3rd-lactation herd, drifts as home-bred first-calvers
+        replace purchased animals, and settles back on the workbook distribution. Production
+        therefore reflects the herd the farm actually has in each year, not a static average.
+      </p>
+    </section>
+
+    <!-- ===================================================== 6 -->
+    <section id="costs">
+      <h2><span class="num">06</span>Operating costs</h2>
+
+      <h3>Feed</h3>
+      <p>
+        Feed cost is the interpolated ration cost for each animal class multiplied by that class's
+        population and the days in the month. Wastage is treated as already inside the ration
+        rates, so it is not added a second time.
+      </p>
+
+      <h3>Labour</h3>
+      <p>
+        Workforce is sized on <em>adult equivalents</em> &mdash; a calf takes roughly a third of the care
+        an adult does and a heifer roughly six-tenths, so they count at 0.3 and 0.6 &mdash; and carried
+        as fractional FTE, consistent with the expected-value principle of &sect;4.
+      </p>
+      <div class="formula">fte_required = adult_equivalents / animals_per_worker
+fte_family   = min( fte_required , family_labour_fte_cap )   <span class="cm">if herd &le; family_labour_max_herd</span>
+fte_hired    = fte_required &minus; fte_family
+supervisors  = herd_size / supervisor_capacity_head          <span class="cm">fractional FTE</span></div>
+      <p>
+        <strong>Family labour</strong> is costed at the market wage and reported on its own line.
+        Costing it makes a household farm and a hired-labour farm comparable &mdash; the work has an
+        opportunity cost whoever does it &mdash; while the separate line lets the same amount be read as
+        household self-employment income, which is how a family farm actually experiences it.
+      </p>
+      <p>
+        <strong>Supervision</strong> is a share of a manager's time, not a whole person hired at a
+        threshold: a 30-head farm needs a fifth of a supervisor, not zero and then suddenly one.
+        The workbook accordingly expresses supervision as a capacity
+        (<span class="mono">herd&nbsp;/&nbsp;supervisor_capacity_head</span> FTE), which keeps
+        supervision cost &mdash; some &#8377;3.6&nbsp;lakh a year for a full supervisor &mdash; from landing on a
+        single herd size as a step no real farm would experience.
+      </p>
+
+      <h3>Health and breeding</h3>
+      <p>
+        Breeding is costed <em>per conception</em>, because that is the causal unit: each calving
+        requires one conception, and each conception requires a number of services. The cost blends
+        artificial insemination (services-per-conception &times; rate) with natural service in the
+        proportion the workbook states. Mastitis is modelled explicitly rather than buried in a
+        flat veterinary charge &mdash; incidence drives both a treatment cost and a milk loss valued at
+        the milk price &mdash; so the disease burden responds to the parameters CIRB actually measures.
+      </p>
+      <div class="formula">breeding_per_conception = (1 &minus; pct_natural) &times; ai_per_conception &times; cost_per_ai
+                        +      pct_natural  &times; natural_service_cost
+
+mastitis = adults &times; incidence/12 &times; ( treatment_cost
+                                   + milk_loss_pct &times; annual_milk_value_per_animal )
+
+insurance = adults &times; insurance_pct_animal_value &times; purchase_price / 12
+vet       = adults &times; vet_per_animal_year / 12</div>
+
+      <h3>Other costs</h3>
+      <p>
+        Electricity, water, transport and miscellaneous are all stated <em>per head</em> at both
+        anchors &mdash; a single measurement basis is a precondition for interpolation, since
+        interpolating between a per-farm figure and a per-head figure is meaningless. Land rent
+        applies at every herd size, including the smallest: land used for the dairy has an
+        alternative use, and that opportunity cost belongs in the appraisal whether or not cash
+        rent is actually paid.
+      </p>
+
+      <h3>Escalation</h3>
+      <div class="tw">
+        <table>
+          <caption>Escalation applies from Year 2; Year 1 uses workbook prices unchanged.</caption>
+          <thead><tr><th>Rate</th><th>Applies to</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">annual_price_escalation</td><td>Milk revenue, and the milk-loss component of mastitis</td></tr>
+            <tr><td class="mono">annual_feed_escalation</td><td>All four feed classes</td></tr>
+            <tr><td class="mono">annual_wage_escalation</td><td>Family, hired and supervisory labour</td></tr>
+            <tr><td class="mono">annual_other_escalation</td><td>All other operating costs, all non-milk revenue, terminal animal values</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================================================== 7 -->
+    <section id="capital">
+      <h2><span class="num">07</span>Capital and depreciation</h2>
+      <p>
+        Shed cost is area &times; rate &mdash; covered and open space per adult, each at its own rate &mdash; so the
+        rate the user types is exactly the rate the model charges, and scale economies in
+        construction enter through the interpolated rate rather than through any hidden transform.
+        Sheds are sized on the adult herd, with young stock housed within the open-space allowance.
+      </p>
+      <p>
+        Working capital is <code>working_capital_months</code> (3, the usual appraisal norm) of the
+        first full operating year's operating cost, financed within the project cost and recovered
+        in the terminal year.
+      </p>
+
+      <div class="tw">
+        <table>
+          <caption>Worked example: project cost at t = 0 for a 50-head, 10-year project on current parameters. Total &#8377;91.68 lakh.</caption>
+          <thead><tr><th>Item</th><th>Class</th><th class="num">&#8377;</th></tr></thead>
+          <tbody>
+            <tr><td>Milch animals</td><td class="mono">animals</td><td class="num">5,962,756</td></tr>
+            <tr><td>Shed &mdash; covered</td><td class="mono">building</td><td class="num">509,590</td></tr>
+            <tr><td>Shed &mdash; open paddock</td><td class="mono">building</td><td class="num">439,627</td></tr>
+            <tr><td>Bore well and water supply</td><td class="mono">building</td><td class="num">130,587</td></tr>
+            <tr><td>Milk storage room</td><td class="mono">building</td><td class="num">89,842</td></tr>
+            <tr><td>Miscellaneous civil works</td><td class="mono">building</td><td class="num">58,352</td></tr>
+            <tr><td>Fodder godown</td><td class="mono">building</td><td class="num">33,758</td></tr>
+            <tr><td>Equipment &mdash; 11 items active</td><td class="mono">plant</td><td class="num">471,000</td></tr>
+            <tr><td>Working capital &mdash; 3 months</td><td class="mono">working_capital</td><td class="num">1,472,582</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Two depreciation schedules</h3>
+      <p>
+        Book and tax depreciation are different systems serving different masters &mdash; the books show
+        a reader the even consumption of an asset's life; the tax computation follows the
+        written-down-value rules of the Income-tax Act &mdash; and the model maintains both, because
+        using either alone misstates the other's output.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th></th><th>Book</th><th>Tax</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Method</strong></td><td>Straight line</td><td>Written-down value, block of assets</td></tr>
+            <tr><td><strong>Buildings</strong></td><td>Over <span class="mono">building_life_years</span> (20)</td><td>10% WDV</td></tr>
+            <tr><td><strong>Plant</strong></td><td>Over equipment life</td><td>15% WDV</td></tr>
+            <tr><td><strong>Animals</strong></td><td>Purchase price down to salvage over 10 years</td><td><strong>Not depreciable</strong> &mdash; s.43(3) excludes livestock from &ldquo;plant&rdquo;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Relief for animals comes instead through <strong>s.36(1)(vi)</strong>: a deduction when an
+        animal used for the business dies, equal to cost less anything realised. The herd engine
+        produces that stream directly, and tracks a purchased-animal pool separately so that
+        home-bred animals &mdash; which carry no purchase cost &mdash; correctly generate no deduction.
+      </p>
+
+      <h3>Terminal value</h3>
+      <p>
+        Taken in Year&nbsp;<em>n</em>: buildings and equipment at straight-line book value, adults at
+        salvage under the default <code>terminal_animals_at = salvage</code> regime (a
+        <span class="mono">market</span> mode values them at the scaled purchase price instead),
+        heifer inventory at heifer sale price, plus recovery of working capital. The default is
+        deliberately conservative: a bank appraisal should not depend on an optimistic residual
+        valuation of the herd.
+      </p>
+    </section>
+
+    <!-- ===================================================== 8 -->
+    <section id="tax">
+      <h2><span class="num">08</span>Taxation</h2>
+      <p>
+        <strong>Dairy income is not agricultural income.</strong> Agricultural income is exempt
+        under s.10(1) and defined in s.2(1A), but dairying involves no basic operations on land &mdash;
+        the test established in <em>CIT v. Raja Benoy Kumar Sahas Roy</em>. A standalone commercial
+        dairy is taxed as business income, and a model that omits tax overstates both returns and
+        debt-service coverage; the engine therefore models it in full and reports pre-tax and
+        post-tax results side by side.
+      </p>
+      <p>
+        Every rate, threshold and slab lives in workbook sheet <span class="mono">11_Tax</span>.
+        Nothing tax-rate-shaped is written in code &mdash; rates change with each Finance Act and GST
+        Council meeting, and a rate change must be a workbook edit, not a release.
+      </p>
+
+      <div class="tw">
+        <table>
+          <caption>Entity forms. The proprietor computation applies the FY 2026-27 new-regime slabs, the s.87A rebate, surcharge tiers and cess, in that order.</caption>
+          <thead><tr><th>Entity</th><th>Basis</th></tr></thead>
+          <tbody>
+            <tr><td>Proprietor / HUF</td><td>Slabs: nil to &#8377;4L &middot; 5% &middot; 10% &middot; 15% &middot; 20% &middot; 25% &middot; 30% above &#8377;24L; s.87A rebate &#8377;60,000 up to &#8377;12L income; surcharge 10% above &#8377;50L, 15% above &#8377;1cr; 4% cess</td></tr>
+            <tr><td>Partnership / LLP</td><td><span class="mono">tax_rate_partnership</span> = 31.2%</td></tr>
+            <tr><td>Private limited company</td><td><span class="mono">tax_rate_company_115baa</span> = 25.168%</td></tr>
+            <tr><td>Co-operative society</td><td><span class="mono">tax_rate_cooperative_115bad</span> = 25.168%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Section 44AD presumptive scheme</h3>
+      <p>
+        For most farms in the modelled range the presumptive scheme is the binding computation. The
+        model computes tax both ways each year and takes the lower, but only where the scheme is
+        actually available &mdash; and it <strong>checks the turnover cap every year rather than trusting
+        the toggle</strong>, because eligibility is a property of the year's turnover, not of the
+        user's intention.
+      </p>
+      <div class="formula">eligible = toggle_on
+           AND entity &isin; { proprietor , partnership }
+           AND turnover &le; presumptive_44ad_turnover_limit      <span class="cm">Rs 3 crore</span>
+
+deemed_profit = turnover &times; presumptive_rate_digital            <span class="cm">6%, receipts assumed digital</span>
+tax           = min( tax_on_deemed , tax_on_regular )          <span class="cm">when eligible</span></div>
+      <p>
+        Losses under the regular computation are carried forward and set off against later years.
+        A 50-head farm turns over roughly &#8377;1.1&nbsp;crore and sits comfortably inside the cap; a
+        200-head farm crosses it in every steady year and moves to regular taxation.
+      </p>
+      <div class="note flag">
+        <span class="label">Consequence &mdash; for review</span>
+        <p>
+          Post-tax NPV per head therefore <em>kinks downward</em> above roughly 150 head, where
+          turnover crosses the &#8377;3&nbsp;crore cap. Pre-tax NPV per head stays monotonic. This is tax
+          law rather than a model artefact, and is worth a sentence in any report shown to a bank.
+        </p>
+      </div>
+
+      <h3>GST</h3>
+      <p>
+        Fresh and pasteurised milk are exempt supplies, so a farm selling raw milk is not required to
+        register at any level of turnover under s.23(1)(a) CGST &mdash; and consequently <strong>no input
+        tax credit is available</strong>. GST paid on inputs is a real cost. It is therefore treated
+        as a costing assumption rather than a modelled line item: all input prices in the workbook
+        are GST-inclusive and no separate GST line is added, which matches how market quotations are
+        actually obtained. A <code>gst_registered</code> regime switch is reserved for a future
+        value-addition scenario, where registration becomes mandatory and input tax credit turns on.
+      </p>
+    </section>
+
+    <!-- ===================================================== 9 -->
+    <section id="finance">
+      <h2><span class="num">09</span>Finance and viability</h2>
+
+      <h3>Loan</h3>
+      <p>
+        The loan is <code>loan_pct_of_project</code> of the total project cost including working
+        capital, less any capital subsidy. Repayment is equal annual principal on a reducing balance
+        after the moratorium, with interest paid &mdash; not capitalised &mdash; during it.
+      </p>
+      <div class="formula">subsidy   = project_cost &times; capital_subsidy_pct
+loan      = project_cost &times; loan_pct_of_project &minus; subsidy
+margin    = project_cost &minus; loan &minus; subsidy                <span class="cm">promoter equity</span>
+interest_y = opening_balance &times; (loan_interest_rate &minus; interest_subvention_pct)
+principal_y = loan / tenure                              <span class="cm">zero during the moratorium</span></div>
+
+      <h3>The three cash-flow vectors</h3>
+      <div class="formula">t:                0            1 &hellip; n&minus;1          n
+project_pre    &minus;project_cost   EBITDA          EBITDA + terminal
+project_post   &minus;project_cost   EBITDA &minus; tax    EBITDA &minus; tax + terminal
+equity         &minus;margin         EBITDA &minus; tax &minus; interest &minus; principal  (+ terminal at n)</div>
+      <p>
+        NPV, IRR, BCR and payback are computed from these vectors and nothing else. The project
+        vectors measure the enterprise before financing &mdash; the question a lender asks &mdash; while the
+        equity vector measures the promoter's own return after debt service, the question the
+        promoter asks. Both are reported because leverage cuts both ways: it raises equity returns
+        when the project out-earns the loan rate and depresses them when it does not, and a
+        borrower deserves to see which side of that line the plan sits on.
+      </p>
+
+      <h3>Debt service coverage</h3>
+      <div class="formula">DSCR_y = ( PAT + book_depreciation + interest ) / ( interest + principal )</div>
+      <p>
+        Reported per year with its minimum and average, on profit <em>after tax</em> as banking
+        convention requires. Years in which no debt is serviced return no ratio rather than an
+        artificial infinity.
+      </p>
+
+      <div class="figs">
+        <div class="fig"><span class="v">3.1%</span><span class="k">IRR pre-tax &middot; 10 head</span></div>
+        <div class="fig"><span class="v">26%</span><span class="k">IRR pre-tax &middot; 50 head</span></div>
+        <div class="fig"><span class="v">45%</span><span class="k">IRR pre-tax &middot; 200 head</span></div>
+        <div class="fig"><span class="v">0.66</span><span class="k">BCR &middot; 10 head</span></div>
+        <div class="fig"><span class="v">1.65</span><span class="k">BCR &middot; 50 head</span></div>
+        <div class="fig"><span class="v">2.68</span><span class="k">BCR &middot; 200 head</span></div>
+      </div>
+      <p style="font-size:.88rem;color:var(--ink-3);">
+        Ten-year horizon on current parameters. Full results, and the findings arising from them,
+        are in the validation record.
+      </p>
+    </section>
+
+    <!-- ===================================================== 10 -->
+    <section id="sensitivity">
+      <h2><span class="num">10</span>Sensitivity and breakeven</h2>
+      <p>
+        A point estimate is not an appraisal. The tornado swings each driver &plusmn;10% and records
+        post-tax project NPV, ranking the assumptions by how much they matter; the breakeven
+        solvers invert the whole model on milk price using a root-finder, answering the two
+        questions a bank actually asks &mdash; at what price does the project stop creating value, and
+        at what price does it stop covering its debt.
+      </p>
+      <div class="tw">
+        <table>
+          <caption>Tornado at 50 head, 5-year horizon. Milk price and yield are mathematically identical drivers &mdash; both scale milk revenue linearly &mdash; which is asserted as a test.</caption>
+          <thead><tr><th>Driver</th><th class="num">NPV swing, &#8377; lakh</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">price_per_litre</td><td class="num">61.7</td></tr>
+            <tr><td class="mono">yield_herd_avg_litres_per_day</td><td class="num">61.7</td></tr>
+            <tr><td class="mono">calving_interval_months</td><td class="num">39.1</td></tr>
+            <tr><td class="mono">feed_cost_multiplier</td><td class="num">35.1</td></tr>
+            <tr><td class="mono">purchase_price</td><td class="num">14.9</td></tr>
+            <tr><td class="mono">wage_per_month</td><td class="num">7.1</td></tr>
+            <tr><td class="mono">culling_salvage_per_head</td><td class="num">4.8</td></tr>
+            <tr><td class="mono">mortality_rate_adult</td><td class="num">0.7</td></tr>
+            <tr><td class="mono">loan_interest_rate</td><td class="num">0.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The zero on interest rate is correct and worth reading carefully. Project NPV is measured
+        before financing, so interest enters only through its effect on taxable income &mdash; and at 50
+        head the farm pays no tax, because s.44AD deems a profit that the s.87A rebate
+        extinguishes. Interest therefore moves the <em>equity</em> return and DSCR, but not project
+        NPV. At 200 head, where tax binds, the same driver becomes non-zero.
+      </p>
+      <p>
+        Two breakeven solvers are provided: the milk price at which post-tax NPV reaches zero
+        (&#8377;61.44/litre at 50 head against a workbook price of &#8377;67.31), and the milk price at which
+        minimum DSCR reaches the bank norm of 1.25 (&#8377;81.71/litre) &mdash; a materially more demanding
+        test, and the more useful of the two for an appraisal conversation.
+      </p>
+    </section>
+
+    <!-- ===================================================== 11 -->
+    <section id="outputs">
+      <h2><span class="num">11</span>Outputs</h2>
+      <p>
+        The Excel report writes ten sheets &mdash; summary, capital, herd, operating statement, financials,
+        loan schedule, terminal value, cash flows, sensitivity, and any user overrides &mdash; to a
+        caller-supplied path. The application passes a temporary file, because the hosting platform
+        has no writable project directory.
+      </p>
+      <p>
+        The application is a thin interface over the engine. Its defining property is that
+        <strong>every sidebar default is resolved from the workbook at the chosen herd size</strong>
+        and updates when that size changes &mdash; the workbook remains the single source of truth all the
+        way to the screen. A numeric input becomes an override only when the user moves it away from
+        the workbook value, and every override is recorded and printed in the report, so a reviewer
+        reading a downloaded appraisal can see exactly which assumptions were the expert defaults
+        and which were the user's.
+      </p>
+      <div class="note accent">
+        <span class="label">Performance</span>
+        <p>
+          A single 5-year run takes about 0.3&nbsp;s and a full tornado about 1.4&nbsp;s, so the
+          monthly time step is comfortably fast enough for interactive use.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================== 12 -->
+    <section id="verification">
+      <h2><span class="num">12</span>Verification</h2>
+      <p>
+        169 automated tests run against the engine. They are organised around properties the model
+        must hold rather than around individual functions, so a refactor that preserves behaviour
+        passes and one that changes behaviour fails.
+      </p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Property</th><th>How it is tested</th></tr></thead>
+          <tbody>
+            <tr><td>Conservation</td><td>Heifer maturities equal culls plus deaths in steady state; loan principal repays exactly to zero; parity mix settles on the workbook distribution</td></tr>
+            <tr><td>Continuity</td><td>NPV per head has no step out of line with its neighbours at any former band boundary &mdash; each step compared against the adjacent steps</td></tr>
+            <tr><td>Monotonicity</td><td>Pre-tax NPV per head rises across 15&ndash;240 head</td></tr>
+            <tr><td>Tax correctness</td><td>Hand-computed slab cases: &#8377;12L &rarr; nil via s.87A; &#8377;30L &rarr; &#8377;4.99L; &#8377;60L with surcharge and cess</td></tr>
+            <tr><td>One timeline</td><td>BCR &gt; 1 exactly when NPV &gt; 0 at the same rate; IRR zeroes the same NPV</td></tr>
+            <tr><td>Workbook integrity</td><td>Duplicate names, blank anchors, out-of-range values and mode violations each raise a specific error</td></tr>
+            <tr><td>No hard-coding</td><td>App defaults resolve differently at 50 and 200 head, and equal the scaled workbook value</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note verify">
+        <span class="label">The continuity test earned its place</span>
+        <p>
+          During development it caught two live defects that no unit test would have found: a
+          whole-person supervision step that put a &#8377;3.6&nbsp;lakh cliff at 25 head (supervision is
+          now fractional FTE, &sect;6), and parameter overrides that were not re-flowing into derived
+          quantities &mdash; which had silently made yield sensitivity near-zero. Property tests on the
+          shape of the output guard against classes of error, not single mistakes.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================== 13 -->
+    <section id="limits">
+      <h2><span class="num">13</span>Assumptions register</h2>
+      <p>
+        Where a value or rule was missing or ambiguous, a defensible default was chosen and
+        recorded rather than the build stopping. Each of the following is flagged for CIRB
+        confirmation; all can be changed by editing the workbook rather than the code.
+      </p>
+
+      <h4>Numerical defaults awaiting confirmation</h4>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Item</th><th>Assumed</th><th>Why it needs review</th></tr></thead>
+          <tbody>
+            <tr><td>Purchase-batch interval</td><td class="num">6 months</td><td>Planning documents specify two batches six months apart; the interval is now a parameter</td></tr>
+            <tr><td>Family labour available</td><td class="num">2.0 FTE</td><td>New parameter &mdash; a working household</td></tr>
+            <tr><td>Terminal animal valuation</td><td>salvage</td><td>Conservative; <span class="mono">market</span> mode available</td></tr>
+            <tr><td>Non-retained female calves</td><td>male-calf price</td><td>No separate parameter exists for them</td></tr>
+            <tr><td>Yield at mid herd sizes</td><td class="num">10.5 L</td><td>The June-2026 expert medium column said 12 L; two anchors cannot represent that non-monotonic shape</td></tr>
+            <tr><td>Heifer sale price</td><td class="num">&#8377;25,000</td><td>Inconsistent with heifer <em>purchase</em> price of &#8377;80&ndash;90,000 for the same class of animal</td></tr>
+            <tr><td>Receipts basis for 44AD</td><td>digital, 6%</td><td>Dairy payments assumed bank-routed</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Known simplifications</h4>
+      <ul>
+        <li>No within-lactation yield curve (no Wood's curve) and no seasonality in fodder price or calving pattern.</li>
+        <li>Marginal relief on income-tax surcharge is not modelled; nor is the s.44AD(4) five-year lock-out on opting out, the old regime, Chapter VI-A deductions, or AMT.</li>
+        <li>No insurance payout is credited on animal death &mdash; conservative.</li>
+        <li>Equipment replacement cycles fall outside the 5- and 10-year horizons and are not modelled.</li>
+        <li>The NABARD back-ended subsidy-reserve convention is not implemented; capital subsidy, if any, reduces the loan at <span class="mono">t = 0</span>.</li>
+        <li>Loan repayment is equal-principal, not EMI.</li>
+        <li>Shed area is sized on the adult herd, with young stock assumed housed within the open-space allowance.</li>
+        <li><code>pregnancy_rate</code> is retained as a cross-check only; conception cost is already carried by <code>ai_per_conception</code>.</li>
+      </ul>
+
+      <div class="note flag">
+        <span class="label">Open &mdash; blocks bank-readiness</span>
+        <p>
+          Two reference documents are still required: a NABARD or bank project-report template if a
+          required format exists, and two real project reports for reconciliation. The model should
+          reproduce both within an agreed tolerance before its outputs are relied on. Also
+          outstanding: CIRB confirmation of the equipment thresholds and capacities, and a decision on
+          whether the 72-day gap between the stated service period and the calving interval is real
+          &mdash; it is currently a validator warning and would move the in-milk fraction materially.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================== A -->
+    <section id="appendix">
+      <h2><span class="num">A</span>Reference tables</h2>
+
+      <h3>A.1 Equipment capacity model</h3>
+      <div class="tw">
+        <table>
+          <caption>The full equipment master. Items flagged for automation are skipped on a manual farm. Note that no two activation thresholds coincide.</caption>
+          <thead>
+            <tr><th>Item</th><th class="num">Min herd</th><th class="num">Max herd</th><th class="num">Capacity</th><th class="num">&#8377; / unit</th><th class="num">Life</th><th>Automation</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Chaff cutter</td><td class="num">1</td><td class="num">54</td><td class="num">25</td><td class="num">15,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Chaff cutter (heavy duty)</td><td class="num">55</td><td class="num">&mdash;</td><td class="num">200</td><td class="num">60,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Milking machine (bucket)</td><td class="num">18</td><td class="num">139</td><td class="num">40</td><td class="num">80,000</td><td class="num">10</td><td>yes</td></tr>
+            <tr><td>Milking system (pipeline)</td><td class="num">140</td><td class="num">&mdash;</td><td class="num">40</td><td class="num">80,000</td><td class="num">10</td><td>yes</td></tr>
+            <tr><td>Bulk milk cooler 500 L</td><td class="num">35</td><td class="num">120</td><td class="num">60</td><td class="num">150,000</td><td class="num">10</td><td>yes</td></tr>
+            <tr><td>Bulk milk cooler 2000 L</td><td class="num">121</td><td class="num">&mdash;</td><td class="num">250</td><td class="num">300,000</td><td class="num">10</td><td>yes</td></tr>
+            <tr><td>Milk cans and utensils</td><td class="num">1</td><td class="num">&mdash;</td><td class="num">20</td><td class="num">4,000</td><td class="num">5</td><td>&mdash;</td></tr>
+            <tr><td>Buckets and small utensils</td><td class="num">1</td><td class="num">&mdash;</td><td class="num">25</td><td class="num">3,000</td><td class="num">3</td><td>&mdash;</td></tr>
+            <tr><td>Weighing scale</td><td class="num">1</td><td class="num">&mdash;</td><td class="num">200</td><td class="num">5,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Fans for heat stress</td><td class="num">1</td><td class="num">&mdash;</td><td class="num">12</td><td class="num">6,000</td><td class="num">5</td><td>&mdash;</td></tr>
+            <tr><td>Other miscellaneous equipment</td><td class="num">1</td><td class="num">&mdash;</td><td class="num">50</td><td class="num">3,000</td><td class="num">5</td><td>&mdash;</td></tr>
+            <tr><td>Fodder transport cart</td><td class="num">28</td><td class="num">159</td><td class="num">150</td><td class="num">30,000</td><td class="num">8</td><td>&mdash;</td></tr>
+            <tr><td>Fodder transport trailer</td><td class="num">160</td><td class="num">&mdash;</td><td class="num">400</td><td class="num">80,000</td><td class="num">8</td><td>&mdash;</td></tr>
+            <tr><td>AI and treatment crate</td><td class="num">45</td><td class="num">&mdash;</td><td class="num">200</td><td class="num">25,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>LN2 cylinder for semen storage</td><td class="num">50</td><td class="num">&mdash;</td><td class="num">250</td><td class="num">20,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Water tanker or pump</td><td class="num">65</td><td class="num">&mdash;</td><td class="num">300</td><td class="num">50,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Generator or power backup</td><td class="num">80</td><td class="num">&mdash;</td><td class="num">300</td><td class="num">200,000</td><td class="num">10</td><td>&mdash;</td></tr>
+            <tr><td>Dung cleaning equipment</td><td class="num">95</td><td class="num">&mdash;</td><td class="num">300</td><td class="num">40,000</td><td class="num">8</td><td>&mdash;</td></tr>
+            <tr><td>Tractor</td><td class="num">110</td><td class="num">&mdash;</td><td class="num">400</td><td class="num">500,000</td><td class="num">10</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>A.2 Ration build-up</h3>
+      <div class="tw">
+        <table>
+          <caption>Entered at both anchors as kg per day and rate per kg; the model interpolates each separately and multiplies. Wastage is inside the rates.</caption>
+          <thead>
+            <tr><th>Class</th><th>Feedstuff</th><th class="num">kg/day @10</th><th class="num">&#8377;/kg @10</th><th class="num">kg/day @200</th><th class="num">&#8377;/kg @200</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Lactating</td><td>Green fodder</td><td class="num">12.00</td><td class="num">4.00</td><td class="num">5.00</td><td class="num">2.50</td></tr>
+            <tr><td>Lactating</td><td>Dry fodder</td><td class="num">5.50</td><td class="num">7.50</td><td class="num">7.50</td><td class="num">5.50</td></tr>
+            <tr><td>Lactating</td><td>Concentrate mixture</td><td class="num">5.50</td><td class="num">35.00</td><td class="num">5.50</td><td class="num">28.00</td></tr>
+            <tr><td>Dry</td><td>Green fodder</td><td class="num">10.00</td><td class="num">4.00</td><td class="num">4.00</td><td class="num">2.50</td></tr>
+            <tr><td>Dry</td><td>Dry fodder</td><td class="num">5.50</td><td class="num">7.50</td><td class="num">7.50</td><td class="num">5.50</td></tr>
+            <tr><td>Dry</td><td>Concentrate mixture</td><td class="num">1.50</td><td class="num">35.00</td><td class="num">1.50</td><td class="num">28.00</td></tr>
+            <tr><td>Heifer</td><td>Green fodder</td><td class="num">8.75</td><td class="num">4.00</td><td class="num">5.00</td><td class="num">2.50</td></tr>
+            <tr><td>Heifer</td><td>Dry fodder</td><td class="num">5.50</td><td class="num">8.50</td><td class="num">7.50</td><td class="num">6.50</td></tr>
+            <tr><td>Heifer</td><td>Concentrate mixture</td><td class="num">1.00</td><td class="num">35.00</td><td class="num">1.00</td><td class="num">28.00</td></tr>
+            <tr><td>Calf</td><td>Whole milk or replacer</td><td class="num">0.50</td><td class="num">24.00</td><td class="num">0.50</td><td class="num">16.00</td></tr>
+            <tr><td>Calf</td><td>Calf starter</td><td class="num">0.50</td><td class="num">40.00</td><td class="num">0.50</td><td class="num">34.00</td></tr>
+            <tr><td>Calf</td><td>Green fodder</td><td class="num">2.00</td><td class="num">4.00</td><td class="num">2.00</td><td class="num">2.50</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>A.3 Module map</h3>
+      <dl class="defs">
+        <div class="def"><dt>params_load.R</dt><dd>Reads the workbook into a typed object; the only place that knows its physical layout. Anchors parsed from column headers.</dd></div>
+        <div class="def"><dt>params_validate.R</dt><dd>Checks against the schema sheet; collects and reports every problem; fails loudly.</dd></div>
+        <div class="def"><dt>params_scale.R</dt><dd>Applies <span class="mono">scale_mode</span> to produce values at the requested herd size; derives dependent quantities; builds the ration and equipment schedules.</dd></div>
+        <div class="def"><dt>herd_cohort.R</dt><dd>Monthly cohort and parity projection with fractional animals under the fixed-herd policy &mdash; the biological model.</dd></div>
+        <div class="def"><dt>ration.R</dt><dd>Ration to feed cost by animal class, with escalation.</dd></div>
+        <div class="def"><dt>cost_labour.R</dt><dd>Family and hired labour, fractional FTE, adult equivalents, supervision.</dd></div>
+        <div class="def"><dt>cost_health.R</dt><dd>Veterinary, insemination, mastitis, insurance; and utilities, land rent, replacement purchases.</dd></div>
+        <div class="def"><dt>cost_capital.R</dt><dd>Covered and open space, godown, civil works, equipment, working capital; terminal value.</dd></div>
+        <div class="def"><dt>depreciation.R</dt><dd>Book and tax schedules; animals excluded from tax depreciation.</dd></div>
+        <div class="def"><dt>revenue.R</dt><dd>Milk, manure, calves, culls, feed bags.</dd></div>
+        <div class="def"><dt>pnl.R</dt><dd>Operating statement, monthly rolled up to annual.</dd></div>
+        <div class="def"><dt>tax.R</dt><dd>Entity form, presumptive scheme, slab computation, loss carry-forward.</dd></div>
+        <div class="def"><dt>finance_loan.R</dt><dd>Loan, moratorium, subsidy, debt service.</dd></div>
+        <div class="def"><dt>finance_viability.R</dt><dd>NPV, IRR, BCR, payback and DSCR on one timeline.</dd></div>
+        <div class="def"><dt>sensitivity.R</dt><dd>One-at-a-time tornado and two breakeven solvers.</dd></div>
+        <div class="def"><dt>report_excel.R</dt><dd>Bankable project workbook.</dd></div>
+        <div class="def"><dt>run_model.R</dt><dd>Orchestrator: assembles every module onto the single timeline.</dd></div>
+      </dl>
+    </section>
+
+    <!-- ===================================================== B -->
+    <section id="glossary">
+      <h2><span class="num">B</span>Glossary of financial and technical terms</h2>
+      <p>
+        Grouped into four categories. Definitions describe the treatment in this engine.
+      </p>
+
+      <h3>B.1 Financial and appraisal terms</h3>
+      <dl class="defs gloss">
+        <div class="def"><dt>Net Present Value <span class="abbr">(NPV)</span></dt>
+          <dd>The difference between the present value of all cash inflows and outflows over the
+          project life, discounted at a specified rate. NPV&nbsp;&gt;&nbsp;0 means the project
+          creates wealth. Reported pre- and post-tax, at both workbook discount rates, from the
+          single cash-flow vector of &sect;9.</dd></div>
+        <div class="def"><dt>Internal Rate of Return <span class="abbr">(IRR)</span></dt>
+          <dd>The annualised compounded return that makes NPV exactly zero &mdash; the maximum interest
+          rate the enterprise could afford to pay on its financing without losing money. Reported
+          pre-tax, post-tax, and on promoter equity.</dd></div>
+        <div class="def"><dt>Equity (promoter) IRR</dt>
+          <dd>IRR of the promoter's own cash flows: margin money out at t&nbsp;=&nbsp;0, and
+          operating surplus after tax, interest and principal thereafter. Leverage raises it above
+          project IRR when the project earns more than the loan rate, and drags it below when it
+          does not &mdash; the model shows both directions.</dd></div>
+        <div class="def"><dt>Benefit-Cost Ratio <span class="abbr">(BCR)</span></dt>
+          <dd>Present value of inflows over present value of outflows on the same timeline and rate
+          as NPV, so BCR&nbsp;&gt;&nbsp;1 exactly when NPV&nbsp;&gt;&nbsp;0 &mdash; a property enforced by
+          test. Banks and agencies use it to justify loans and subsidies.</dd></div>
+        <div class="def"><dt>Debt Service Coverage Ratio <span class="abbr">(DSCR)</span></dt>
+          <dd>The farm's ability to cover debt payments from operating income:
+          (profit after tax + depreciation + interest) &divide; (interest + principal), per year, on
+          profit after tax as banking convention requires. Banks typically require at least
+          1.25.</dd></div>
+        <div class="def"><dt>Payback period</dt>
+          <dd>Years for cumulative net cash flow to recover the initial investment, interpolated
+          within the recovery year. Shorter means lower risk.</dd></div>
+        <div class="def"><dt>Discount rate</dt>
+          <dd>The rate converting future cash to present value, reflecting time value of money and
+          risk. Workbook defaults 12% and 15%; both are reported.</dd></div>
+        <div class="def"><dt>Margin money</dt>
+          <dd>The promoter's own contribution to project cost (typically 25%); the remainder is
+          bank loan.</dd></div>
+        <div class="def"><dt>Moratorium</dt>
+          <dd>An initial period in which principal repayment is suspended; interest is still paid.
+          A workbook parameter, and the standard structuring answer to the Year-2 dip.</dd></div>
+        <div class="def"><dt>Depreciation</dt>
+          <dd>Systematic allocation of an asset's cost over its life; non-cash. Two schedules are
+          maintained &mdash; straight-line for the books, and written-down-value for tax, with livestock
+          excluded from the latter (&sect;7).</dd></div>
+        <div class="def"><dt>EBITDA</dt>
+          <dd>Earnings before interest, tax, depreciation and amortisation &mdash; total revenue minus
+          total operating cost, including replacement animal purchases. The line at which the
+          operating statement (&sect;6) hands over to the financial layer.</dd></div>
+        <div class="def"><dt>Net cash flow</dt>
+          <dd>Cash in minus cash out in a year; unlike net income it excludes non-cash items such
+          as depreciation.</dd></div>
+        <div class="def"><dt>Working capital</dt>
+          <dd>Funds covering day-to-day operating expense &mdash; three months of recurring cost, the
+          usual appraisal norm &mdash; financed within the project cost and recovered at the end of the
+          horizon.</dd></div>
+        <div class="def"><dt>Terminal value / closing stock</dt>
+          <dd>Value of assets at the end of the business period: buildings and equipment at
+          straight-line book value, adults at salvage under the default conservative regime
+          (market optional), heifers at sale price, plus working-capital recovery.</dd></div>
+        <div class="def"><dt>Capital subsidy</dt>
+          <dd>A government grant (e.g. under NABARD dairy schemes) reducing project capital cost;
+          historically 25&ndash;33% for eligible dairy enterprises. Default 0 in the workbook; the
+          back-ended subsidy-reserve convention is a recorded future item.</dd></div>
+        <div class="def"><dt>Interest subvention</dt>
+          <dd>A scheme reducing the effective loan interest rate for eligible enterprises; a
+          workbook parameter, default 0.</dd></div>
+      </dl>
+
+      <h3>B.2 Taxation terms</h3>
+      <dl class="defs gloss">
+        <div class="def"><dt>Business income vs agricultural income</dt>
+          <dd>Agricultural income is exempt under s.10(1), Income-tax Act, but dairying involves no
+          basic operations on land (<em>CIT v. Raja Benoy Kumar Sahas Roy</em>), so a standalone
+          commercial dairy is fully taxable business income.</dd></div>
+        <div class="def"><dt>Section 44AD (presumptive taxation)</dt>
+          <dd>Deems business profit at 6% of digital turnover (8% cash) for eligible proprietors,
+          HUFs and partnerships with turnover up to &#8377;3&nbsp;crore, with no books or audit. The
+          model checks the cap every year and applies the scheme only where beneficial.</dd></div>
+        <div class="def"><dt>Section 87A rebate</dt>
+          <dd>A rebate (&#8377;60,000, FY&nbsp;2026-27 new regime) that extinguishes tax for individual
+          taxable income up to &#8377;12&nbsp;lakh &mdash; the reason most small farms in the model pay no
+          tax.</dd></div>
+        <div class="def"><dt>Written-Down Value <span class="abbr">(WDV)</span></dt>
+          <dd>The tax depreciation method: a fixed percentage of the declining block balance each
+          year &mdash; 10% for buildings, 15% for plant and machinery &mdash; as against straight line in the
+          books.</dd></div>
+        <div class="def"><dt>Section 36(1)(vi) animal write-off</dt>
+          <dd>Livestock cannot be depreciated for tax (s.43(3)); instead, when an animal used for
+          the business dies or becomes permanently useless, its cost less any realisation is
+          deducted. The model applies this to purchased animals only, since home-bred stock carries
+          no purchase cost.</dd></div>
+        <div class="def"><dt>Surcharge and cess</dt>
+          <dd>Surcharge is an additional levy on tax above income thresholds (10% over &#8377;50&nbsp;lakh,
+          15% over &#8377;1&nbsp;crore); health-and-education cess adds 4% on tax plus surcharge. Both
+          are workbook parameters.</dd></div>
+        <div class="def"><dt>GST exemption and input tax credit <span class="abbr">(ITC)</span></dt>
+          <dd>Fresh and pasteurised milk are exempt supplies, so a raw-milk farm need not register
+          (s.23(1)(a) CGST) &mdash; and consequently cannot recover GST paid on inputs. All workbook input
+          prices are therefore GST-inclusive and no separate GST line exists.</dd></div>
+      </dl>
+
+      <h3>B.3 Biological and dairy terms</h3>
+      <dl class="defs gloss">
+        <div class="def"><dt>Murrah</dt>
+          <dd>A premium water-buffalo breed originating in Haryana, known for high milk yield
+          (10&ndash;16&nbsp;L/day) and high fat content (6.5&ndash;9%); the primary improver breed used
+          globally for buffalo dairying.</dd></div>
+        <div class="def"><dt>Lactation period</dt>
+          <dd>The period of milk production after calving &mdash; 300 days in the current workbook.</dd></div>
+        <div class="def"><dt>Dry period</dt>
+          <dd>The rest between the end of one lactation and the next calving. Derived as calving
+          interval minus lactation days, so the reproductive clocks cannot disagree (&sect;5).</dd></div>
+        <div class="def"><dt>Calving interval</dt>
+          <dd>Time between successive calvings, 15&ndash;16 months for Murrah. The primary reproductive
+          clock of the model: the in-milk fraction and calving rate both derive from it.</dd></div>
+        <div class="def"><dt>Age at first calving <span class="abbr">(AFC)</span></dt>
+          <dd>Age at which a heifer first calves &mdash; 36 months in the current workbook &mdash; and the
+          length of the rearing pipeline.</dd></div>
+        <div class="def"><dt>Heifer</dt>
+          <dd>A young female that has not yet calved, reared from the calf gate to first calving on
+          its own ration with its own mortality rate.</dd></div>
+        <div class="def"><dt>Parity</dt>
+          <dd>The count of calvings an animal has had. Yield varies by parity group (1, 2&ndash;3, 4, 5+);
+          the herd's parity mix is tracked monthly and drives the average yield multiplier.</dd></div>
+        <div class="def"><dt>Culling</dt>
+          <dd>Removal of animals from the herd, sold at salvage value. Under the fixed-herd policy,
+          culling is the balancing variable that holds the adult herd at its target size; voluntary
+          culling draws from parity 4+ only.</dd></div>
+        <div class="def"><dt>Artificial insemination <span class="abbr">(AI)</span></dt>
+          <dd>Breeding with semen from genetically superior bulls. Costed per conception &mdash;
+          services-per-conception &times; rate per service, blended with natural service in the workbook
+          proportion.</dd></div>
+        <div class="def"><dt>Staggered purchase</dt>
+          <dd>Buying the Year-1 herd in batches at an interval so milk production ramps rather than
+          starting all at once; batch count and interval are workbook parameters.</dd></div>
+        <div class="def"><dt>Heifer pipeline</dt>
+          <dd>The cohort-tracking of female calves through rearing to first calving, by age in
+          months, with class-specific mortality.</dd></div>
+        <div class="def"><dt>Adult equivalent <span class="abbr">(AE)</span></dt>
+          <dd>Workforce-sizing measure in which a calf counts as 0.3 and a heifer as 0.6 of an
+          adult, reflecting the relative care each class needs.</dd></div>
+        <div class="def"><dt>In-milk fraction</dt>
+          <dd>The share of adults lactating at a point in time &mdash; lactation days over calving
+          interval days at steady state (&asymp;0.64 on current values), computed per cohort during the
+          Year-1 ramp.</dd></div>
+      </dl>
+
+      <h3>B.4 Model and software terms</h3>
+      <dl class="defs gloss">
+        <div class="def"><dt>Bioeconomic model</dt>
+          <dd>A model integrating biological production processes &mdash; herd dynamics, milk production,
+          reproduction &mdash; with economic analysis of costs, revenue and profitability, here through
+          the three-layer framework of &sect;1.</dd></div>
+        <div class="def"><dt>Decision support system <span class="abbr">(DSS)</span></dt>
+          <dd>A computer-based application that analyses data and presents it to help users make
+          business decisions; here, the Shiny application over the engine.</dd></div>
+        <div class="def"><dt>Anchor</dt>
+          <dd>A herd size at which every parameter's value is stated by the domain expert &mdash; 10 and
+          200 head in the current workbook, read from the column headers. Values between anchors
+          are interpolated; outside them, clamped.</dd></div>
+        <div class="def"><dt>Scale mode</dt>
+          <dd>The workbook column declaring how a parameter moves between its anchors:
+          <code>constant</code>, <code>log</code>, <code>linear</code>, <code>derived</code>,
+          <code>capacity</code> or <code>regime</code> (&sect;3).</dd></div>
+        <div class="def"><dt>Capacity model</dt>
+          <dd>The equipment treatment: each item activates at a minimum herd size and is bought in
+          whole units of a stated capacity, with thresholds deliberately spread so no two items
+          step together.</dd></div>
+        <div class="def"><dt>Economies of scale</dt>
+          <dd>The cost advantage of size, expressed as logarithmic interpolation of unit costs and
+          prices between the two anchors &mdash; approximately a power law, the empirically observed
+          shape of scale relationships.</dd></div>
+        <div class="def"><dt>data.table</dt>
+          <dd>High-performance R package used for all tabular storage and computation in the
+          engine.</dd></div>
+        <div class="def"><dt>Shiny / bslib</dt>
+          <dd>The R web-application framework (and its Bootstrap 5 theming layer) on which the
+          dashboard is built; deployed at khatkar.shinyapps.io/buffalo_planner.</dd></div>
+        <div class="def"><dt>openxlsx2</dt>
+          <dd>R package used both to read the parameter workbook and to write the bankable Excel
+          report.</dd></div>
+        <div class="def"><dt>NABARD</dt>
+          <dd>National Bank for Agriculture and Rural Development &mdash; refinances agricultural and
+          rural development lending, including dairy entrepreneurship schemes with capital subsidy;
+          source of the appraisal norms used here.</dd></div>
+        <div class="def"><dt>ICAR-NDRI</dt>
+          <dd>Indian Council of Agricultural Research &ndash; National Dairy Research Institute, Karnal;
+          premier dairy-science research institution in India and developer of the TEAM-CD
+          appraisal software.</dd></div>
+        <div class="def"><dt>CIRB</dt>
+          <dd>Central Institute for Research on Buffaloes, Hisar &mdash; buffalo genetics, breeding and
+          management research, and the source of the parameter values in this model.</dd></div>
+      </dl>
+    </section>
+
+    <!-- ===================================================== C -->
+    <section id="references">
+      <h2><span class="num">C</span>References</h2>
+
+      <h3>C.1 Literature and comparable tools</h3>
+      <ol>
+        <li>Arti, Sirohi, S., Oberoi, P.S., and Rai, C.K. (2017). Computer Based Decision Support
+          System for Generating Techno-Economic Feasibility Report to Establish Commercial Dairy
+          Farm. <em>Indian Dairyman</em>, October 2017, pp. 94&ndash;98.</li>
+        <li>Marin-Riffo, M.C., Raadsma, H.W., Jerry, D.R., Coman, G.J., and Khatkar, M.S. (2021).
+          Bioeconomic modelling of hatchery, grow-out and combined business of Australian black
+          tiger shrimp. <em>Reviews in Aquaculture</em>, 13, pp. 1695&ndash;1708 &mdash; methodological basis
+          for coupling a cohort production model to project financial analysis.</li>
+        <li>Penn State Extension. <em>Dairy Foods Processing Investment Analysis Tool.</em>
+          Pennsylvania State University.</li>
+        <li>ICAR-NDRI, Karnal. <em>TEAM-CD (Techno-Economic AssessMent &mdash; Commercial Dairy Farming)
+          Software v1.0.</em></li>
+        <li>CIRB Hisar. Central Institute for Research on Buffaloes &mdash; Murrah breed performance
+          data; source of the biological and cost parameters carried in the workbook (via the
+          Parameter Rationale).</li>
+        <li>NABARD. <em>Dairy Entrepreneurship Development Scheme</em> &mdash; guidelines for capital
+          subsidy; source of the appraisal norms used here (margin money, DSCR benchmark 1.25,
+          working-capital convention).</li>
+      </ol>
+
+      <h3>C.2 Statute and case law <span style="font-weight:400;color:var(--ink-3);">(tax method, &sect;8)</span></h3>
+      <ol>
+        <li><em>CIT v. Raja Benoy Kumar Sahas Roy</em>, Supreme Court of India (1957) &mdash; the
+          basic-operations-on-land test under which dairy income is business income, not
+          agricultural income.</li>
+        <li>Income-tax Act, 1961: ss. 2(1A) and 10(1) (agricultural income); s. 43(3) (livestock
+          excluded from &ldquo;plant&rdquo;); s. 36(1)(vi) (deduction on death of animals); s. 44AD
+          (presumptive taxation); s. 87A (rebate); ss. 115BAA and 115BAD (company and co-operative
+          rates); Rule 5 and Appendix I (WDV depreciation blocks).</li>
+        <li>Central Goods and Services Tax Act, 2017: s. 23(1)(a) (no registration for exclusively
+          exempt supplies); Notification 2/2017-CT(Rate) (nil-rated milk, fodder and prepared
+          cattle feed).</li>
+      </ol>
+
+      <h3>C.3 Project documents</h3>
+      <ol>
+        <li><em>Planning Document</em> (August 2026, with build addendum) &mdash; decisions and
+          scope for this engine.</li>
+        <li><em>Parameter Rationale</em> (March 2026) &mdash; evidence and sources for every default
+          value.</li>
+        <li><em>Decision record</em> (August 2026 build) &mdash; every assumption taken during the build,
+          flagged for CIRB review.</li>
+        <li><em>Validation record</em> (August 2026) &mdash; internal checks, headline results and open
+          findings.</li>
+        <li><em>Technical Documentation</em> (March 2026) &mdash; documentation of the preceding
+          version of this system; source of the glossary and several references above.</li>
+      </ol>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div><strong>Buffalo Bioeconomic Model &mdash; technical method reference.</strong> August 2026.</div>
+    <div>Adelaide University &middot; ICAR-CIRB Hisar &middot; LUVAS.</div>
+    <div>Companion documents: planning document (decisions), decision record (build assumptions), validation record (results and findings), parameter rationale (sources for every default).</div>
+  </div>
+</footer>
+
+</body>
+</html>
