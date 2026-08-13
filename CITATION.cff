@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this model, please cite it as below."
+title: "Buffalo Bioeconomic Model"
+type: software
+version: "2.0"
+date-released: "2026-08-13"
+authors:
+  - family-names: Khatkar
+    given-names: Mehar Singh
+abstract: >
+  Bioeconomic decision-support model for dairy buffalo (Murrah) enterprises in
+  North-West India. Couples a monthly cohort herd projection with a
+  technological requirements model and full financial analysis (Indian
+  business taxation, loan structuring, NPV/IRR/BCR/DSCR) driven entirely by an
+  editable parameter workbook. Delivered as an R engine, Shiny application and
+  Excel report generator.
+keywords:
+  - bioeconomic model
+  - buffalo
+  - dairy
+  - decision support
+  - R
+  - Shiny

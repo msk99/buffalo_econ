@@ -1,0 +1,18 @@
+# -- non-code material kept out of the repository (owner's request: code only) --
+docs/
+archive/
+reference/
+outputs/
+# manuscript, analysis scripts and results (not part of the software)
+paper/
+
+# -- secrets: never commit --
+deploy/deploy_manual_CONTAINS_SECRETS.R
+rsconnect/
+
+# -- machine noise --
+.DS_Store
+.Rhistory
+.Rapp.history
+.Rproj.user
+deploy/bundle/
