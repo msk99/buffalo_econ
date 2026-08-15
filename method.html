@@ -471,7 +471,7 @@
     <div class="masthead-meta">
       <div><b>Version</b><span>Engine v2.0, August 2026</span></div>
       <div><b>Partners</b><span>Adelaide University &middot; ICAR-CIRB Hisar &middot; LUVAS</span></div>
-      <div><b>Parameters</b><span>115 across 14 workbook sheets</span></div>
+      <div><b>Parameters</b><span>116 across 14 workbook sheets</span></div>
       <div><b>Tests</b><span>169 automated, all passing</span></div>
       <div><b>Status</b><span>Deployed; validation gate open</span></div>
     </div>
@@ -575,7 +575,7 @@
             <text x="22" y="34" class="d-stage">Data layer &mdash; the parameter workbook</text>
             <rect x="22" y="44" width="200" height="52" rx="3" class="d-box-a"/>
             <text x="34" y="64" class="d-label">parameters_v3 workbook</text>
-            <text x="34" y="80" class="d-sub">115 params &middot; ration &middot; equipment</text>
+            <text x="34" y="80" class="d-sub">116 params &middot; ration &middot; equipment</text>
             <rect x="248" y="44" width="150" height="52" rx="3" class="d-box"/>
             <text x="260" y="64" class="d-label">params_load</text>
             <text x="260" y="80" class="d-sub">typed object, anchors</text>
@@ -695,7 +695,7 @@
     <section id="workbook">
       <h2><span class="num">02</span>The parameter workbook</h2>
       <p>
-        Every number in the model lives in <code>parameters_v3_2026-08.xlsx</code> &mdash; 115 parameters
+        Every number in the model lives in <code>parameters_v3_2026-08.xlsx</code> &mdash; 116 parameters
         across 14 sheets &mdash; because the people who know the right values are dairy scientists and
         economists, not programmers. The workbook is therefore designed as the primary interface:
         every parameter sheet uses the same eleven columns, so the loader reads any of them without
@@ -726,7 +726,7 @@
       <p>
         Anchor herd sizes are <em>read from the column headers</em>, not hard-coded. Renaming
         <code>small_10</code> to <code>small_15</code> moves the anchor; no code changes. Sheet
-        <span class="mono">13_Schema</span> restates the contract for all 115 parameters and the
+        <span class="mono">13_Schema</span> restates the contract for all 116 parameters and the
         loader checks that the parameter sheets and the schema agree exactly, in both directions.
       </p>
 
@@ -1208,7 +1208,7 @@ vet       = adults &times; vet_per_animal_year / 12</div>
 deemed_profit = turnover &times; presumptive_rate_digital            <span class="cm">6%, receipts assumed digital</span>
 tax           = min( tax_on_deemed , tax_on_regular )          <span class="cm">when eligible</span></div>
       <p>
-        Losses under the regular computation are carried forward and set off against later years.
+        Losses under the regular computation are carried forward and set off against later years. Section 44AD(4) bars re-entry to the scheme for five years once an assessee who has used it declares on another basis. The workbook parameter <code>presumptive_sticky_years</code> selects the treatment: 0, the default, allows the year-by-year choice; 5 applies the statutory bar. In testing the bar changes results only at mid scale, where an enterprise would otherwise leave the scheme during the second-year trough and rejoin immediately.
         A 50-head farm turns over roughly &#8377;1.1&nbsp;crore and sits comfortably inside the cap; a
         200-head farm crosses it in every steady year and moves to regular taxation.
       </p>
@@ -1416,7 +1416,7 @@ equity         &minus;margin         EBITDA &minus; tax &minus; interest &minus;
       <h4>Known simplifications</h4>
       <ul>
         <li>No within-lactation yield curve (no Wood's curve) and no seasonality in fodder price or calving pattern.</li>
-        <li>Marginal relief on income-tax surcharge is not modelled; nor is the s.44AD(4) five-year lock-out on opting out, the old regime, Chapter VI-A deductions, or AMT.</li>
+        <li>Marginal relief on income-tax surcharge is not modelled; nor are the old regime, Chapter VI-A deductions, or AMT. The s.44AD(4) five-year lock-out on re-entry to the presumptive scheme is modelled as an option (see &sect;8).</li>
         <li>No insurance payout is credited on animal death &mdash; conservative.</li>
         <li>Equipment replacement cycles fall outside the 5- and 10-year horizons and are not modelled.</li>
         <li>The NABARD back-ended subsidy-reserve convention is not implemented; capital subsidy, if any, reduces the loan at <span class="mono">t = 0</span>.</li>
